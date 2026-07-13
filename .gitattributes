@@ -1,0 +1,15 @@
+# Treat all files as text with automatic line-ending normalization unless specified otherwise
+* text=auto
+
+# Declare binary files explicitly so Git doesn't modify their line endings
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+
+# Keep shell scripts using LF line endings
+*.sh text eol=lf
+gradlew text eol=lf

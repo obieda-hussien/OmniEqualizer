@@ -59,6 +59,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Validate and Regenerate Gradle Wrapper
+        run: gradle wrapper
+
       - name: Cache Gradle + native build dirs
         uses: actions/cache@v5
         with:
@@ -134,6 +137,9 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Validate and Regenerate Gradle Wrapper
+        run: gradle wrapper
+
       - name: Grant gradlew permission
         run: chmod +x gradlew
 
@@ -179,6 +185,9 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
+
+      - name: Validate and Regenerate Gradle Wrapper
+        run: gradle wrapper
 
       - name: Grant gradlew permission
         run: chmod +x gradlew
@@ -247,6 +256,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Validate and Regenerate Gradle Wrapper
+        run: gradle wrapper
 
       - name: Grant gradlew permission
         run: chmod +x gradlew
@@ -326,6 +338,9 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Validate and Regenerate Gradle Wrapper
+        run: gradle wrapper
 
       - name: Grant gradlew permission
         run: chmod +x gradlew
