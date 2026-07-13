@@ -1,0 +1,6 @@
+{
+  "name": "OmniEqualizer",
+  "description": "An intelligent, high-fidelity, automatic audio equalizer with advanced DSP controls, custom profile sharing, and Material 3 design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
