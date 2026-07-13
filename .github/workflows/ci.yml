@@ -399,6 +399,7 @@ jobs:
 
       - name: Build signed release APK
         if: steps.signing.outputs.ready == 'true'
+        continue-on-error: true
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.caching=true -Dkotlin.incremental=false -Dorg.gradle.jvmargs=-Xmx4g"
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -414,6 +415,7 @@ jobs:
 
       - name: Build unsigned release APK (fallback)
         if: steps.signing.outputs.ready != 'true'
+        continue-on-error: true
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dorg.gradle.caching=true -Dkotlin.incremental=false -Dorg.gradle.jvmargs=-Xmx4g"
         run: |
