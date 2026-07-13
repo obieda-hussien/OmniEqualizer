@@ -26,18 +26,10 @@ android {
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      val keystoreFile = file(keystorePath)
-      if (keystoreFile.exists()) {
-        storeFile = keystoreFile
-        storePassword = System.getenv("STORE_PASSWORD")
-        keyAlias = "upload"
-        keyPassword = System.getenv("KEY_PASSWORD")
-      } else {
-        storeFile = file("${rootDir}/debug.keystore")
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-      }
+      storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
+      keyAlias = "upload"
+      keyPassword = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")
@@ -55,7 +47,9 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
-    debug { signingConfig = signingConfigs.getByName("debugConfig") }
+    debug {
+      signingConfig = signingConfigs.getByName("debugConfig")
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
@@ -67,6 +61,77 @@ android {
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
 }
+
+val generateReleaseKeystore = tasks.register("generateReleaseKeystore") {
+  val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+  val keystoreFile = file(keystorePath)
+  outputs.file(keystoreFile)
+  doLast {
+    if (!keystoreFile.exists()) {
+      val sPass = System.getenv("STORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
+      val kAlias = "upload"
+      val kPass = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
+      try {
+        val pb = ProcessBuilder(
+          "keytool", "-genkey", "-v",
+          "-keystore", keystoreFile.absolutePath,
+          "-alias", kAlias,
+          "-keyalg", "RSA",
+          "-keysize", "2048",
+          "-validity", "10000",
+          "-dname", "CN=Test, O=Test, C=US",
+          "-storepass", sPass,
+          "-keypass", kPass,
+          "-deststoretype", "pkcs12"
+        )
+        pb.redirectErrorStream(true)
+        val process = pb.start()
+        val text = process.inputStream.bufferedReader().readText()
+        println(text)
+        process.waitFor()
+      } catch (e: Exception) {
+        println("Failed to generate release keystore: ${e.message}")
+      }
+    }
+  }
+}
+
+val generateDebugKeystore = tasks.register("generateDebugKeystore") {
+  val debugKeystoreFile = file("${rootDir}/debug.keystore")
+  outputs.file(debugKeystoreFile)
+  doLast {
+    if (!debugKeystoreFile.exists()) {
+      try {
+        val pb = ProcessBuilder(
+          "keytool", "-genkey", "-v",
+          "-keystore", debugKeystoreFile.absolutePath,
+          "-alias", "androiddebugkey",
+          "-keyalg", "RSA",
+          "-keysize", "2048",
+          "-validity", "10000",
+          "-dname", "CN=Android Debug, O=Android, C=US",
+          "-storepass", "android",
+          "-keypass", "android",
+          "-deststoretype", "pkcs12"
+        )
+        pb.redirectErrorStream(true)
+        val process = pb.start()
+        val text = process.inputStream.bufferedReader().readText()
+        println(text)
+        process.waitFor()
+      } catch (e: Exception) {
+        println("Failed to generate debug keystore: ${e.message}")
+      }
+    }
+  }
+}
+
+tasks.configureEach {
+  if (name.startsWith("validateSigning") || name.startsWith("preBuild")) {
+    dependsOn(generateReleaseKeystore, generateDebugKeystore)
+  }
+}
+
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
 // to match the convention used in Web projects.
