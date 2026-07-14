@@ -23,17 +23,20 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startEqualizerService()
-        }
+    ) { _: Boolean ->
+        startEqualizerService()
     }
+
+    private val requestAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* Live spectrum simply stays inactive if denied — EQ still works without it. */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
         checkAndRequestPermissions()
+        requestAudioCapturePermissionIfNeeded()
 
         setContent {
             val viewModel: EqualizerViewModel = viewModel()
@@ -54,6 +57,16 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             startEqualizerService()
+        }
+    }
+
+    private fun requestAudioCapturePermissionIfNeeded() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }
     }
 

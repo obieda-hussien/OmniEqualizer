@@ -3,14 +3,19 @@ package com.omni.equalizer.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.omni.equalizer.audio.OmniAudioEngine
+import com.omni.equalizer.audio.OmniVisualizerEngine
 import com.omni.equalizer.data.EqualizerPreset
+import com.omni.equalizer.data.PersistedSettings
 import com.omni.equalizer.data.PresetDatabase
 import com.omni.equalizer.data.PresetRepository
+import com.omni.equalizer.data.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -54,15 +59,25 @@ data class EqualizerUiState(
     val showNotification: Boolean = true,
     
     // Loading states
-    val isSplashActive: Boolean = true
+    val isSplashActive: Boolean = true,
+
+    // Honest real-engine status — surfaced in the UI instead of silently pretending
+    // everything always works.
+    val isEngineFullyReal: Boolean = false,
+    val engineWarning: String? = null,
+    val isSpectrumLive: Boolean = false
 )
 
 class EqualizerViewModel(application: Application) : AndroidViewModel(application) {
     private val database = PresetDatabase.getDatabase(application)
     private val repository = PresetRepository(database.presetDao())
+    private val settingsRepository = SettingsRepository(application)
 
     private val _uiState = MutableStateFlow(EqualizerUiState())
     val uiState: StateFlow<EqualizerUiState> = _uiState.asStateFlow()
+
+    /** Real captured FFT-derived levels (10 bands, 0f..1f) — see [OmniVisualizerEngine]. */
+    val spectrumLevels: StateFlow<FloatArray> = OmniVisualizerEngine.levels
 
     // Expose DB presets
     val presets: StateFlow<List<EqualizerPreset>> = repository.allPresets
@@ -74,6 +89,44 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         viewModelScope.launch {
+            // Restore whatever was saved last session BEFORE seeding/splash logic runs, so the
+            // user's actual curve and toggles survive process death instead of resetting to
+            // hard-coded defaults every time Android kills the app.
+            val saved = settingsRepository.settingsFlow.first()
+            if (saved != null) {
+                _uiState.value = _uiState.value.copy(
+                    isEnabled = saved.isEnabled,
+                    gains = saved.gains,
+                    bassBoost = saved.bassBoost,
+                    bassBoostEnabled = saved.bassBoostEnabled,
+                    loudness = saved.loudness,
+                    loudnessEnabled = saved.loudnessEnabled,
+                    virtualizer = saved.virtualizer,
+                    virtualizerEnabled = saved.virtualizerEnabled,
+                    selectedPresetId = saved.selectedPresetId,
+                    selectedPresetName = saved.selectedPresetName,
+                    smartIntensity = saved.smartIntensity,
+                    currentLanguage = saved.currentLanguage,
+                    currentTheme = saved.currentTheme,
+                    bassFrequency = saved.bassFrequency,
+                    bassMaxGain = saved.bassMaxGain,
+                    loudnessMaxGain = saved.loudnessMaxGain,
+                    audioBalanceEnabled = saved.audioBalanceEnabled,
+                    globalMixAlwaysBound = saved.globalMixAlwaysBound,
+                    connectToMusicPlayersOnly = saved.connectToMusicPlayersOnly,
+                    frameDurationMs = saved.frameDurationMs,
+                    reverbEnabled = saved.reverbEnabled,
+                    showVolumeSlider = saved.showVolumeSlider,
+                    use10Bands = saved.use10Bands,
+                    useLegacyEffects = saved.useLegacyEffects,
+                    showNotification = saved.showNotification,
+                    volume = saved.volume
+                    // isSmartOptimized deliberately NOT restored — always start with it off so a
+                    // killed process doesn't silently resume background adaptive EQ.
+                )
+                pushStateToEngine()
+            }
+
             // Seed default presets if none exist
             val currentPresets = repository.allPresets.first()
             if (currentPresets.isEmpty()) {
@@ -84,6 +137,80 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
             kotlinx.coroutines.delay(2500)
             _uiState.value = _uiState.value.copy(isSplashActive = false)
         }
+
+        // Auto-save on every change, debounced so rapid slider drags / smart-EQ adaptation
+        // don't hammer disk I/O.
+        viewModelScope.launch {
+            _uiState.debounce(500).collect { state ->
+                settingsRepository.save(state.toPersistedSettings())
+            }
+        }
+
+        // Reflect the REAL engine status in the UI instead of always claiming success.
+        viewModelScope.launch {
+            OmniAudioEngine.status.collect { status ->
+                val (isReal, warning) = when (status) {
+                    is OmniAudioEngine.Status.Active -> true to null
+                    is OmniAudioEngine.Status.PartiallyActive ->
+                        true to "${status.missing.joinToString()} غير مدعوم على هذا الجهاز"
+                    is OmniAudioEngine.Status.Unavailable -> false to status.reason
+                    is OmniAudioEngine.Status.NotAttached -> false to null
+                }
+                _uiState.value = _uiState.value.copy(isEngineFullyReal = isReal, engineWarning = warning)
+                if (isReal) pushStateToEngine()
+            }
+        }
+
+        viewModelScope.launch {
+            OmniVisualizerEngine.isAvailable.collect { available ->
+                _uiState.value = _uiState.value.copy(isSpectrumLive = available)
+            }
+        }
+    }
+
+    private fun EqualizerUiState.toPersistedSettings() = PersistedSettings(
+        isEnabled = isEnabled,
+        gains = gains,
+        bassBoost = bassBoost,
+        bassBoostEnabled = bassBoostEnabled,
+        loudness = loudness,
+        loudnessEnabled = loudnessEnabled,
+        virtualizer = virtualizer,
+        virtualizerEnabled = virtualizerEnabled,
+        selectedPresetId = selectedPresetId,
+        selectedPresetName = selectedPresetName,
+        smartIntensity = smartIntensity,
+        isSmartOptimized = isSmartOptimized,
+        currentLanguage = currentLanguage,
+        currentTheme = currentTheme,
+        bassFrequency = bassFrequency,
+        bassMaxGain = bassMaxGain,
+        loudnessMaxGain = loudnessMaxGain,
+        audioBalanceEnabled = audioBalanceEnabled,
+        globalMixAlwaysBound = globalMixAlwaysBound,
+        connectToMusicPlayersOnly = connectToMusicPlayersOnly,
+        frameDurationMs = frameDurationMs,
+        reverbEnabled = reverbEnabled,
+        showVolumeSlider = showVolumeSlider,
+        use10Bands = use10Bands,
+        useLegacyEffects = useLegacyEffects,
+        showNotification = showNotification,
+        volume = volume
+    )
+
+    /** Applies the current UI state to the real audio engine. Idempotent, safe to call often. */
+    private fun pushStateToEngine() {
+        val s = _uiState.value
+        OmniAudioEngine.applyState(
+            isEnabled = s.isEnabled,
+            gains = s.gains,
+            bassBoostEnabled = s.bassBoostEnabled,
+            bassBoostStrengthPercent = s.bassBoost,
+            loudnessEnabled = s.loudnessEnabled,
+            loudnessStrengthPercent = s.loudness,
+            virtualizerEnabled = s.virtualizerEnabled,
+            virtualizerStrengthPercent = s.virtualizer
+        )
     }
 
     private suspend fun seedDefaultPresets() {
@@ -151,6 +278,7 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     fun toggleEqualizer() {
         val nextEnabled = !_uiState.value.isEnabled
         _uiState.value = _uiState.value.copy(isEnabled = nextEnabled)
+        pushStateToEngine()
         if (nextEnabled && _uiState.value.isSmartOptimized) {
             applySmartOptimization()
         }
@@ -166,37 +294,44 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
                 selectedPresetId = -1,
                 selectedPresetName = "Custom"
             )
+            OmniAudioEngine.setBand(index, currentGains[index])
         }
     }
 
     fun updateBassBoost(value: Float) {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(bassBoost = value.coerceIn(0f, 100f))
+        OmniAudioEngine.setBassBoostStrength(_uiState.value.bassBoost)
     }
 
     fun toggleBassBoost() {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(bassBoostEnabled = !_uiState.value.bassBoostEnabled)
+        OmniAudioEngine.setBassBoostEnabled(_uiState.value.bassBoostEnabled)
     }
 
     fun updateLoudness(value: Float) {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(loudness = value.coerceIn(0f, 100f))
+        OmniAudioEngine.setLoudnessTarget(_uiState.value.loudness)
     }
 
     fun toggleLoudness() {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(loudnessEnabled = !_uiState.value.loudnessEnabled)
+        OmniAudioEngine.setLoudnessEnabled(_uiState.value.loudnessEnabled)
     }
 
     fun updateVirtualizer(value: Float) {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(virtualizer = value.coerceIn(0f, 100f))
+        OmniAudioEngine.setVirtualizerStrength(_uiState.value.virtualizer)
     }
 
     fun toggleVirtualizer() {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(virtualizerEnabled = !_uiState.value.virtualizerEnabled)
+        OmniAudioEngine.setVirtualizerEnabled(_uiState.value.virtualizerEnabled)
     }
 
     fun updateVolume(value: Float) {
@@ -220,9 +355,12 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
             selectedPresetName = preset.name,
             isSmartOptimized = false // Presets override smart optimization
         )
+        pushStateToEngine()
     }
 
     private var smartJob: kotlinx.coroutines.Job? = null
+    private var smartBaselineGains: List<Float>? = null
+    private var lastSmartUpdateMs = 0L
 
     fun toggleSmartOptimization() {
         if (!_uiState.value.isEnabled) return
@@ -237,57 +375,65 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
         } else {
             smartJob?.cancel()
             smartJob = null
+            smartBaselineGains = null
         }
     }
 
+    /**
+     * Real adaptive EQ: reads the ACTUAL captured spectrum from [OmniVisualizerEngine] (real
+     * FFT of session 0, not a fabricated sine wave) and gently balances the curve toward it —
+     * bands that are genuinely quiet in the current mix get nudged up, loud bands are left
+     * alone, scaled by [EqualizerUiState.smartIntensity]. This is a simple heuristic, not a
+     * trained model — it is intentionally described as "adaptive", not oversold as true AI.
+     *
+     * If the visualizer can't attach (permission denied / device restriction), we fall back to
+     * a single static, clearly-labelled "balanced" curve instead of animating fake motion.
+     */
     private fun applySmartOptimization() {
         smartJob?.cancel()
-        
-        // High-fidelity smart DSP simulation: Auto-enhances curves for maximum balance & clarity
-        val baseGains = listOf(
-            6.5f,  // 31Hz (Deep sub-bass boost)
-            9.2f,  // 62Hz (Punchy mid-bass enhancement)
-            5.0f,  // 125Hz (Smooth warmth transitions)
-            1.2f,  // 250Hz (Clean low-mids to avoid mud)
-            -2.5f, // 500Hz (Dip to expand vocal headroom)
-            1.8f,  // 1kHz (Presence correction)
-            3.6f,  // 2kHz (Crisp guitar/vocal edge)
-            5.2f,  // 4kHz (Hi-hat sparkle)
-            7.5f,  // 8kHz (Air/Brilliance enhancement)
-            10.0f  // 16kHz (Infinite ultra-high detail sheen)
-        )
-        
-        _uiState.value = _uiState.value.copy(
-            gains = baseGains,
-            bassBoost = 65f,
-            bassBoostEnabled = true,
-            loudnessEnabled = true,
-            loudness = 4f,
-            virtualizerEnabled = true,
-            virtualizer = 60f
-        )
+        smartBaselineGains = _uiState.value.gains
 
-        // Launch advanced Smart AI simulation loop
+        val fallbackCurve = listOf(4f, 5.5f, 3f, 1f, -1f, 0.5f, 2f, 3f, 4f, 4.5f)
+
         smartJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
-            var time = 0f
-            while (true) {
-                kotlinx.coroutines.delay(500)
-                if (!_uiState.value.isEnabled || !_uiState.value.isSmartOptimized) break
-                
-                time += 0.5f
-                // Simulate AI dynamically listening and adjusting 10 bands organically using sine wave interference patterns
-                val updatedGains = baseGains.mapIndexed { index, baseGain ->
-                    val dynamicOffset = (kotlin.math.sin(time * 0.5f + index) * 1.5f + kotlin.math.cos(time * 0.8f - index * 0.5f) * 0.8f).toFloat()
-                    (baseGain + dynamicOffset).coerceIn(-15f, 15f)
-                }
-                
-                // Switch back to Main for UI state update
+            if (!OmniVisualizerEngine.isAvailable.value) {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                    _uiState.value = _uiState.value.copy(
-                        gains = updatedGains,
-                        bassBoost = (65f + kotlin.math.sin(time * 0.3f).toFloat() * 10f).coerceIn(0f, 100f),
-                        virtualizer = (60f + kotlin.math.cos(time * 0.4f).toFloat() * 15f).coerceIn(0f, 100f)
+                    _uiState.value = _uiState.value.copy(gains = fallbackCurve)
+                    OmniAudioEngine.applyState(
+                        isEnabled = _uiState.value.isEnabled,
+                        gains = fallbackCurve,
+                        bassBoostEnabled = _uiState.value.bassBoostEnabled,
+                        bassBoostStrengthPercent = _uiState.value.bassBoost,
+                        loudnessEnabled = _uiState.value.loudnessEnabled,
+                        loudnessStrengthPercent = _uiState.value.loudness,
+                        virtualizerEnabled = _uiState.value.virtualizerEnabled,
+                        virtualizerStrengthPercent = _uiState.value.virtualizer
                     )
+                }
+                return@launch
+            }
+
+            OmniVisualizerEngine.levels.collect { measured ->
+                if (!_uiState.value.isEnabled || !_uiState.value.isSmartOptimized) return@collect
+
+                val now = System.currentTimeMillis()
+                if (now - lastSmartUpdateMs < 200) return@collect // ~5 updates/sec, smooth not jittery
+                lastSmartUpdateMs = now
+
+                val baseline = smartBaselineGains ?: fallbackCurve
+                val intensity = (_uiState.value.smartIntensity / 100f).coerceIn(0f, 1f)
+                val avgEnergy = measured.average().toFloat()
+
+                val adaptedGains = baseline.mapIndexed { index, baseGain ->
+                    val measuredLevel = measured.getOrElse(index) { avgEnergy }
+                    // Genuinely quiet band relative to the rest of the real mix -> nudge up.
+                    val deficit = (avgEnergy - measuredLevel).coerceIn(-1f, 1f)
+                    (baseGain + deficit * 6f * intensity).coerceIn(-15f, 15f)
+                }
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(gains = adaptedGains)
+                    for (i in adaptedGains.indices) OmniAudioEngine.setBand(i, adaptedGains[i])
                 }
             }
         }
