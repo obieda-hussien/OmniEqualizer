@@ -60,34 +60,41 @@ import kotlin.math.sin
 import kotlin.math.atan2
 import kotlin.math.PI
 
-// ── Splash Screen Component ──
+/**
+ * Splash screen redesigned to directly mirror the app icon (orbit ring + 5 equalizer bars)
+ * instead of an unrelated 3-slider mockup, so the brand feels consistent from launcher tap
+ * to first frame. Text corrected to the real product name — the previous "OMNIEQUALIZER PRO"
+ * subtitle implied a paid tier that doesn't exist.
+ */
 @Composable
 fun EqualizerSplashScreen(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "splash")
-    
-    val rotation by infiniteTransition.animateFloat(
+
+    val ringRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = LinearEasing),
+            animation = tween(3200, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rotation"
+        label = "ring_rotation"
     )
 
     val scalePulse by infiniteTransition.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1.05f,
+        initialValue = 0.96f,
+        targetValue = 1.03f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
+            animation = tween(1400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "scale"
     )
 
+    val barHeights = listOf(0.45f, 0.7f, 1f, 0.7f, 0.45f)
+
     Box(
         modifier = modifier
-            .background(Color(0xFF121220)) // Dark brand background
+            .background(Color(0xFF121220))
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -95,74 +102,80 @@ fun EqualizerSplashScreen(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Elegant Equalizer sliders visual inside a rounded card
-            Card(
-                shape = RoundedCornerShape(40.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+            Box(
                 modifier = Modifier
-                    .size(180.dp)
-                    .scale(scalePulse)
-                    .border(1.dp, Color(0xFF6C63FF).copy(alpha = 0.3f), RoundedCornerShape(40.dp))
-                    .shadow(16.dp, RoundedCornerShape(40.dp), clip = true, ambientColor = Color(0xFF6C63FF))
+                    .size(148.dp)
+                    .scale(scalePulse),
+                contentAlignment = Alignment.Center
             ) {
+                // Soft glow behind everything, matching the app icon's radial glow
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .size(148.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(OmniAccentIndigo.copy(alpha = 0.22f), Color.Transparent)
+                            )
+                        )
+                )
+
+                // The "Omni" orbit ring motif, rotating slowly
+                Canvas(
+                    modifier = Modifier
+                        .size(124.dp)
+                        .rotate(ringRotation)
                 ) {
-                    AdvancedDspBackgroundVisualizer(isActive = true, modifier = Modifier.fillMaxSize().alpha(0.7f))
-                    Row(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        SliderBarMock(heightFraction = 0.8f, activeFraction = 0.6f)
-                        SliderBarMock(heightFraction = 0.9f, activeFraction = 0.4f)
-                        SliderBarMock(heightFraction = 0.7f, activeFraction = 0.7f)
+                    val strokeWidth = 3.dp.toPx()
+                    drawArc(
+                        brush = Brush.linearGradient(
+                            listOf(OmniAccentIndigo, Color(0xFFB26BE0), OmniAccentPink)
+                        ),
+                        startAngle = -40f,
+                        sweepAngle = 250f,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+                }
+
+                // Five equalizer bars, echoing the launcher icon exactly
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.height(64.dp)
+                ) {
+                    barHeights.forEach { fraction ->
+                        Box(
+                            modifier = Modifier
+                                .width(10.dp)
+                                .fillMaxHeight(fraction)
+                                .clip(RoundedCornerShape(OmniRadius.pill))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(OmniAccentIndigo, Color(0xFFB26BE0), OmniAccentPink)
+                                    )
+                                )
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(OmniSpacing.xxxl))
 
-            // Loading circle
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .rotate(rotation)
-                    .border(4.dp, Color(0xFF6C63FF).copy(alpha = 0.1f), CircleShape)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .drawBehind {
-                            drawArc(
-                                color = Color(0xFF6C63FF),
-                                startAngle = 0f,
-                                sweepAngle = 90f,
-                                useCenter = false,
-                                style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                            )
-                        }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // App Brand Name
             Text(
-                text = "Equalizer",
+                text = "OmniEqualizer",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.SansSerif,
-                letterSpacing = 1.sp
+                letterSpacing = 0.5.sp
             )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
+
+            Spacer(modifier = Modifier.height(OmniSpacing.xs))
+
             Text(
-                text = "OMNIEQUALIZER PRO",
-                color = Color(0xFF6C63FF),
+                text = "SYSTEM-WIDE AUDIO ENGINE",
+                color = OmniAccentIndigo,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
@@ -171,38 +184,3 @@ fun EqualizerSplashScreen(modifier: Modifier = Modifier) {
         }
     }
 }
-
-@Composable
-fun SliderBarMock(heightFraction: Float, activeFraction: Float) {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight(heightFraction)
-            .width(10.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(Color(0xFF2E2F45)),
-        verticalArrangement = Arrangement.Bottom
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(activeFraction)
-                .background(
-                    brush = Brush.verticalGradient(
-                        listOf(Color(0xFFFF6B9D), Color(0xFF6C63FF))
-                    )
-                ),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            // Knob
-            Box(
-                modifier = Modifier
-                    .offset(y = (-5).dp)
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .background(Color.White)
-                    .border(2.dp, Color(0xFFFF6B9D), CircleShape)
-            )
-        }
-    }
-}
-

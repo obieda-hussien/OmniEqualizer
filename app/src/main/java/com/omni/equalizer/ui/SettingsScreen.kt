@@ -82,7 +82,7 @@ fun EqualizerSettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = OmniSpacing.lg, vertical = OmniSpacing.md),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -109,9 +109,12 @@ fun EqualizerSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = OmniSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(OmniSpacing.sm)
             ) {
+                // ── Appearance ──
+                item { SectionLabel(Loc.get("settings_group_appearance", isArabic)) }
+
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Language,
@@ -136,15 +139,10 @@ fun EqualizerSettingsScreen(
                     )
                 }
 
-                item {
-                    SettingsClickableItem(
-                        icon = Icons.Rounded.Backup,
-                        title = Loc.get("backup", isArabic),
-                        desc = Loc.get("backup_desc", isArabic),
-                        onClick = {},
-                        isArabic = isArabic
-                    )
-                }
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Audio Engine ──
+                item { SectionLabel(Loc.get("settings_group_engine", isArabic)) }
 
                 item {
                     SettingsDropdownItem(
@@ -240,17 +238,6 @@ fun EqualizerSettingsScreen(
 
                 item {
                     SettingsToggleItem(
-                        icon = Icons.Rounded.LinearScale,
-                        title = Loc.get("volume_bar", isArabic),
-                        desc = Loc.get("volume_bar_desc", isArabic),
-                        checked = state.showVolumeSlider,
-                        onCheckedChange = { viewModel.toggleVolumeSlider() },
-                        isArabic = isArabic
-                    )
-                }
-
-                item {
-                    SettingsToggleItem(
                         icon = Icons.Rounded.GridOn,
                         title = Loc.get("use_10_bands", isArabic),
                         desc = Loc.get("use_10_bands_desc", isArabic),
@@ -271,6 +258,11 @@ fun EqualizerSettingsScreen(
                     )
                 }
 
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Notifications ──
+                item { SectionLabel(Loc.get("settings_group_notifications", isArabic)) }
+
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Notifications,
@@ -278,6 +270,32 @@ fun EqualizerSettingsScreen(
                         desc = Loc.get("notifications_desc", isArabic),
                         checked = state.showNotification,
                         onCheckedChange = { viewModel.toggleShowNotification() },
+                        isArabic = isArabic
+                    )
+                }
+
+                item {
+                    SettingsToggleItem(
+                        icon = Icons.Rounded.LinearScale,
+                        title = Loc.get("volume_bar", isArabic),
+                        desc = Loc.get("volume_bar_desc", isArabic),
+                        checked = state.showVolumeSlider,
+                        onCheckedChange = { viewModel.toggleVolumeSlider() },
+                        isArabic = isArabic
+                    )
+                }
+
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Advanced ──
+                item { SectionLabel(Loc.get("settings_group_advanced", isArabic)) }
+
+                item {
+                    SettingsClickableItem(
+                        icon = Icons.Rounded.Backup,
+                        title = Loc.get("backup", isArabic),
+                        desc = Loc.get("backup_desc", isArabic),
+                        onClick = {},
                         isArabic = isArabic
                     )
                 }
@@ -293,7 +311,7 @@ fun EqualizerSettingsScreen(
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(OmniSpacing.xxl))
                 }
             }
         }
@@ -314,17 +332,17 @@ fun SettingsDropdownItem(
     var expanded by remember { mutableStateOf(false) }
 
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded }
-                .padding(16.dp),
+                .padding(OmniSpacing.lg),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -332,13 +350,13 @@ fun SettingsDropdownItem(
                 Icon(
                     imageVector = Icons.Rounded.ArrowDropDown,
                     contentDescription = "Dropdown",
-                    tint = Color(0xFF00D9A6)
+                    tint = OmniAccentTeal
                 )
 
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color(0xFF1A1B2E))
+                    modifier = Modifier.background(OmniCardBg)
                 ) {
                     options.forEach { opt ->
                         DropdownMenuItem(
@@ -363,17 +381,17 @@ fun SettingsDropdownItem(
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }
@@ -391,24 +409,24 @@ fun SettingsClickableItem(
     isArabic: Boolean
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(16.dp),
+                .padding(OmniSpacing.lg),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = if (isArabic) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Navigate",
-                tint = Color(0xFF00D9A6)
+                tint = OmniAccentTeal
             )
 
             Row(
@@ -422,17 +440,17 @@ fun SettingsClickableItem(
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }
@@ -451,16 +469,16 @@ fun SettingsToggleItem(
     isArabic: Boolean
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(OmniSpacing.lg),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -469,8 +487,8 @@ fun SettingsToggleItem(
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF00D9A6),
-                    uncheckedThumbColor = Color(0xFF94A3B8),
+                    checkedTrackColor = OmniAccentTeal,
+                    uncheckedThumbColor = OmniMutedText,
                     uncheckedTrackColor = Color(0xFF2E2F45)
                 )
             )
@@ -486,17 +504,17 @@ fun SettingsToggleItem(
                         modifier = Modifier.padding(end = 12.dp, start = 8.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp, end = 8.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }

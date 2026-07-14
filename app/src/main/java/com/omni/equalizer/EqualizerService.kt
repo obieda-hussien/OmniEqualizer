@@ -16,16 +16,24 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 /**
- * Owns the real audio engines for as long as the process is alive. The engines are
- * process-wide singletons ([OmniAudioEngine], [OmniVisualizerEngine]) — this service's job
- * is purely lifecycle: attach them when the app starts doing work, release them when it's
- * done, and keep the notification text truthful about whether the engine actually took hold.
+ * Owns the real audio engines for as long as the process is alive, and drives a notification
+ * that reflects genuine engine state — active effects, honest status, and a real "Bypass"
+ * quick A/B toggle — instead of a static "AI Engine optimizing your audio" string that never
+ * changed regardless of what was actually happening.
  */
 class EqualizerService : Service() {
+
+    companion object {
+        private const val CHANNEL_ID = "OMNI_EQ_CHANNEL"
+        private const val NOTIFICATION_ID = 1
+        const val ACTION_STOP = "com.omni.equalizer.STOP_SERVICE"
+        const val ACTION_TOGGLE_BYPASS = "com.omni.equalizer.TOGGLE_BYPASS"
+    }
 
     private val serviceScope = CoroutineScope(SupervisorJob())
     private var statusJob: Job? = null
@@ -35,21 +43,30 @@ class EqualizerService : Service() {
         OmniAudioEngine.attach()
         OmniVisualizerEngine.attach()
 
-        // Keep the notification text truthful as the engine status changes (e.g. if
-        // attach() initially fails but a later retry succeeds).
-        statusJob = OmniAudioEngine.status.onEach { updateNotification() }.launchIn(serviceScope)
+        // Keep the notification truthful as real engine/effect/bypass state changes.
+        statusJob = combine(
+            OmniAudioEngine.status,
+            OmniAudioEngine.activeEffects,
+            OmniAudioEngine.isBypassed
+        ) { _, _, _ -> Unit }.onEach { updateNotification() }.launchIn(serviceScope)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "STOP_SERVICE") {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
-            return START_NOT_STICKY
+        when (intent?.action) {
+            ACTION_STOP -> {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+                return START_NOT_STICKY
+            }
+            ACTION_TOGGLE_BYPASS -> {
+                OmniAudioEngine.setGlobalBypass(!OmniAudioEngine.isBypassed.value)
+                return START_STICKY
+            }
         }
         createNotificationChannel()
-        startForeground(1, createNotification())
+        startForeground(NOTIFICATION_ID, createNotification())
         return START_STICKY
     }
 
@@ -63,17 +80,17 @@ class EqualizerService : Service() {
 
     private fun updateNotification() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-        manager?.notify(1, createNotification())
+        manager?.notify(NOTIFICATION_ID, createNotification())
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                "OMNI_EQ_CHANNEL",
-                "OmniEqualizer Smart Service",
+                CHANNEL_ID,
+                "OmniEqualizer Engine",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Runs the AI-powered equalizer engine in the background"
+                description = "Shows the real-time status of the audio engine and lets you bypass it quickly"
                 setShowBadge(false)
             }
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -82,33 +99,53 @@ class EqualizerService : Service() {
     }
 
     private fun createNotification(): Notification {
-        val intent = Intent(this, MainActivity::class.java).apply {
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        val contentPendingIntent = PendingIntent.getActivity(
+            this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val stopIntent = Intent(this, EqualizerService::class.java).apply {
-            action = "STOP_SERVICE"
-        }
         val stopPendingIntent = PendingIntent.getService(
-            this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE
+            this, 1, Intent(this, EqualizerService::class.java).apply { action = ACTION_STOP },
+            PendingIntent.FLAG_IMMUTABLE
         )
 
-        val contentText = when (val status = OmniAudioEngine.status.value) {
-            is OmniAudioEngine.Status.Active -> "Real-time engine is shaping your system audio"
+        val bypassPendingIntent = PendingIntent.getService(
+            this, 2, Intent(this, EqualizerService::class.java).apply { action = ACTION_TOGGLE_BYPASS },
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val isBypassed = OmniAudioEngine.isBypassed.value
+        val activeEffects = OmniAudioEngine.activeEffects.value
+
+        val statusLine = when (val status = OmniAudioEngine.status.value) {
+            is OmniAudioEngine.Status.Active -> "Engine active on the global mix"
             is OmniAudioEngine.Status.PartiallyActive ->
-                "Engine active — ${status.missing.joinToString()} unavailable on this device"
+                "Engine active — ${status.missing.joinToString()} unsupported on this device"
             is OmniAudioEngine.Status.Unavailable -> "Engine unavailable on this device"
             is OmniAudioEngine.Status.NotAttached -> "Starting engine…"
         }
 
-        return NotificationCompat.Builder(this, "OMNI_EQ_CHANNEL")
-            .setContentTitle("OmniEqualizer")
-            .setContentText(contentText)
-            .setSmallIcon(android.R.drawable.ic_media_play) // Placeholder icon
-            .setContentIntent(pendingIntent)
+        val effectsLine = when {
+            isBypassed -> "Bypassed — playing raw, unprocessed audio"
+            activeEffects.isEmpty() -> "No effects currently active"
+            else -> "Active: ${activeEffects.joinToString(" • ")}"
+        }
+
+        val expandedText = "$statusLine\n$effectsLine"
+
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(if (isBypassed) "OmniEqualizer (Bypassed)" else "OmniEqualizer")
+            .setContentText(effectsLine)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(expandedText))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(contentPendingIntent)
+            .addAction(
+                R.drawable.ic_notification,
+                if (isBypassed) "Re-enable" else "Bypass",
+                bypassPendingIntent
+            )
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

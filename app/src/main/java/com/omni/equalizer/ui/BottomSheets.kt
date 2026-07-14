@@ -71,8 +71,10 @@ fun HelpSheetContent(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        SheetGrabber()
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -93,7 +95,7 @@ fun HelpSheetContent(
 
         Text(
             text = Loc.get("help_body", isArabic),
-            color = Color(0xFF94A3B8),
+            color = OmniMutedText,
             fontSize = 14.sp,
             lineHeight = 22.sp,
             textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
@@ -118,8 +120,11 @@ fun PresetsSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 500.dp)
-            .padding(top = 12.dp, bottom = 24.dp)
+            .padding(top = 12.dp, bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        SheetGrabber()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -129,7 +134,7 @@ fun PresetsSheetContent(
         ) {
             Button(
                 onClick = onAddCustomPreset,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C63FF)),
+                colors = ButtonDefaults.buttonColors(containerColor = OmniAccentIndigo),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Icon", modifier = Modifier.size(16.dp))
@@ -161,14 +166,14 @@ fun PresetsSheetContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) Color(0xFF2E2F45) else Color(0xFF1A1B2E))
+                        .background(if (isSelected) OmniAccentIndigo.copy(alpha = 0.18f) else OmniCardBg)
                         .clickable { onPresetSelect(preset) }
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = { onOptionsClick(preset) }) {
-                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Options", tint = Color(0xFF94A3B8))
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Options", tint = OmniMutedText)
                     }
 
                     Row(
@@ -187,7 +192,7 @@ fun PresetsSheetContent(
                                 ) {
                                     Text(
                                         text = tag.trim(),
-                                        color = Color(0xFF00D9A6),
+                                        color = OmniAccentTeal,
                                         fontSize = 8.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -229,8 +234,10 @@ fun PresetOptionsSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp),
-        horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        SheetGrabber()
+
         Text(
             text = preset.name,
             color = Color.White,
@@ -256,9 +263,9 @@ fun PresetOptionsSheetContent(
             if (isArabic) {
                 Text(Loc.get("edit_preset", isArabic), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = Color(0xFF6C63FF))
+                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
             } else {
-                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = Color(0xFF6C63FF))
+                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(Loc.get("edit_preset", isArabic), color = Color.White, fontSize = 14.sp)
             }
@@ -275,9 +282,9 @@ fun PresetOptionsSheetContent(
             if (isArabic) {
                 Text(Loc.get("share_profile", isArabic), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = Color(0xFF00D9A6))
+                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
             } else {
-                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = Color(0xFF00D9A6))
+                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(Loc.get("share_profile", isArabic), color = Color.White, fontSize = 14.sp)
             }
@@ -294,9 +301,9 @@ fun PresetOptionsSheetContent(
             if (isArabic) {
                 Text(Loc.get("import_profile", isArabic), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = Color(0xFF00D9A6))
+                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
             } else {
-                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = Color(0xFF00D9A6))
+                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(Loc.get("import_profile", isArabic), color = Color.White, fontSize = 14.sp)
             }

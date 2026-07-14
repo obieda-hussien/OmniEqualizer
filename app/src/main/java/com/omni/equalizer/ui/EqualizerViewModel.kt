@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.omni.equalizer.audio.OmniAudioEngine
 import com.omni.equalizer.audio.OmniVisualizerEngine
+import com.omni.equalizer.audio.OmniVolumeController
 import com.omni.equalizer.data.EqualizerPreset
 import com.omni.equalizer.data.PersistedSettings
 import com.omni.equalizer.data.PresetDatabase
@@ -65,7 +66,15 @@ data class EqualizerUiState(
     // everything always works.
     val isEngineFullyReal: Boolean = false,
     val engineWarning: String? = null,
-    val isSpectrumLive: Boolean = false
+    val isSpectrumLive: Boolean = false,
+
+    // Real loudness normalization (AGC-style): keeps perceived volume steady across quiet
+    // and loud passages by continuously reading actual measured energy, instead of a fixed
+    // static loudness target.
+    val autoLoudnessNormalization: Boolean = false,
+
+    // True while the notification's "Bypass" quick-compare toggle is active.
+    val isBypassed: Boolean = false
 )
 
 class EqualizerViewModel(application: Application) : AndroidViewModel(application) {
@@ -88,6 +97,9 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
         )
 
     init {
+        OmniVolumeController.attach(application)
+        observeBypassState()
+
         viewModelScope.launch {
             // Restore whatever was saved last session BEFORE seeding/splash logic runs, so the
             // user's actual curve and toggles survive process death instead of resetting to
@@ -119,12 +131,18 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
                     showVolumeSlider = saved.showVolumeSlider,
                     use10Bands = saved.use10Bands,
                     useLegacyEffects = saved.useLegacyEffects,
-                    showNotification = saved.showNotification,
-                    volume = saved.volume
+                    showNotification = saved.showNotification
+                    // volume deliberately NOT restored from disk — the real system volume
+                    // (read below) is always the source of truth, not a stale saved number.
                     // isSmartOptimized deliberately NOT restored — always start with it off so a
                     // killed process doesn't silently resume background adaptive EQ.
                 )
                 pushStateToEngine()
+            }
+
+            // The volume slider reflects the REAL system media volume, not a remembered number.
+            OmniVolumeController.getCurrentVolumePercent()?.let { realVolume ->
+                _uiState.value = _uiState.value.copy(volume = realVolume)
             }
 
             // Seed default presets if none exist
@@ -335,7 +353,9 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun updateVolume(value: Float) {
-        _uiState.value = _uiState.value.copy(volume = value.coerceIn(0f, 100f))
+        val clamped = value.coerceIn(0f, 100f)
+        _uiState.value = _uiState.value.copy(volume = clamped)
+        OmniVolumeController.setVolumePercent(clamped)
     }
 
     fun applyPreset(preset: EqualizerPreset) {
@@ -437,6 +457,81 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             }
         }
+    }
+
+    private var loudnessAgcJob: kotlinx.coroutines.Job? = null
+    private var lastAgcUpdateMs = 0L
+    // Rolling long-term average energy, updated slowly so short transients (a single loud
+    // drum hit) don't yank the loudness target around — only the sustained level does.
+    private var rollingAverageEnergy = 0.35f
+
+    fun toggleAutoLoudnessNormalization() {
+        if (!_uiState.value.isEnabled) return
+        val next = !_uiState.value.autoLoudnessNormalization
+        _uiState.value = _uiState.value.copy(autoLoudnessNormalization = next)
+        if (next) {
+            startAutoLoudnessNormalization()
+        } else {
+            loudnessAgcJob?.cancel()
+            loudnessAgcJob = null
+        }
+    }
+
+    /**
+     * Real loudness normalization (a lightweight AGC — automatic gain control): reads the
+     * ACTUAL measured mix energy from [OmniVisualizerEngine] and continuously retargets
+     * [OmniAudioEngine]'s LoudnessEnhancer so quiet passages get boosted more and already-loud
+     * passages get boosted less, keeping perceived volume steadier across a whole playlist —
+     * instead of one fixed loudness percentage that's too weak on quiet tracks and too strong
+     * on loud ones.
+     *
+     * This is independent from Smart EQ: that one reshapes the *spectral balance* (which
+     * bands are loud vs quiet); this one manages *overall* loudness consistency.
+     */
+    private fun startAutoLoudnessNormalization() {
+        loudnessAgcJob?.cancel()
+        if (!OmniVisualizerEngine.isAvailable.value) return // no real signal to react to — don't fake it
+
+        loudnessAgcJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            OmniVisualizerEngine.levels.collect { measured ->
+                if (!_uiState.value.isEnabled || !_uiState.value.autoLoudnessNormalization) return@collect
+
+                val now = System.currentTimeMillis()
+                if (now - lastAgcUpdateMs < 300) return@collect
+                lastAgcUpdateMs = now
+
+                val currentEnergy = measured.average().toFloat()
+                // Slow exponential moving average -> reacts to the song's overall level, not
+                // individual beats.
+                rollingAverageEnergy = rollingAverageEnergy * 0.9f + currentEnergy * 0.1f
+
+                // Quiet sustained material (low rollingAverageEnergy) -> push loudness target
+                // up; already-hot material -> ease it back down. Inverse relationship, clamped
+                // to a sane 0..100 range matching the existing loudness slider's scale.
+                val targetLoudnessPercent = ((1f - rollingAverageEnergy) * 90f + 10f).coerceIn(10f, 100f)
+
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(loudness = targetLoudnessPercent, loudnessEnabled = true)
+                    OmniAudioEngine.setLoudnessTarget(targetLoudnessPercent)
+                    OmniAudioEngine.setLoudnessEnabled(true)
+                }
+            }
+        }
+    }
+
+    /** Mirrors [OmniAudioEngine.isBypassed] into the UI state — driven from the notification. */
+    fun observeBypassState() {
+        viewModelScope.launch {
+            OmniAudioEngine.isBypassed.collect { bypassed ->
+                _uiState.value = _uiState.value.copy(isBypassed = bypassed)
+            }
+        }
+    }
+
+    /** Same bypass the notification's quick-action drives — exposed here so the in-app UI
+     *  doesn't need to reach into [OmniAudioEngine] directly. */
+    fun toggleBypass() {
+        OmniAudioEngine.setGlobalBypass(!_uiState.value.isBypassed)
     }
 
     fun saveCustomPreset(name: String, tags: String = "BASS, EQ") {
