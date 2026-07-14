@@ -10,8 +10,35 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.omni.equalizer.audio.OmniAudioEngine
+import com.omni.equalizer.audio.OmniVisualizerEngine
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
+/**
+ * Owns the real audio engines for as long as the process is alive. The engines are
+ * process-wide singletons ([OmniAudioEngine], [OmniVisualizerEngine]) — this service's job
+ * is purely lifecycle: attach them when the app starts doing work, release them when it's
+ * done, and keep the notification text truthful about whether the engine actually took hold.
+ */
 class EqualizerService : Service() {
+
+    private val serviceScope = CoroutineScope(SupervisorJob())
+    private var statusJob: Job? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        OmniAudioEngine.attach()
+        OmniVisualizerEngine.attach()
+
+        // Keep the notification text truthful as the engine status changes (e.g. if
+        // attach() initially fails but a later retry succeeds).
+        statusJob = OmniAudioEngine.status.onEach { updateNotification() }.launchIn(serviceScope)
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -24,6 +51,19 @@ class EqualizerService : Service() {
         createNotificationChannel()
         startForeground(1, createNotification())
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        statusJob?.cancel()
+        serviceScope.cancel()
+        OmniVisualizerEngine.release()
+        OmniAudioEngine.release()
+        super.onDestroy()
+    }
+
+    private fun updateNotification() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        manager?.notify(1, createNotification())
     }
 
     private fun createNotificationChannel() {
@@ -56,9 +96,17 @@ class EqualizerService : Service() {
             this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        val contentText = when (val status = OmniAudioEngine.status.value) {
+            is OmniAudioEngine.Status.Active -> "Real-time engine is shaping your system audio"
+            is OmniAudioEngine.Status.PartiallyActive ->
+                "Engine active — ${status.missing.joinToString()} unavailable on this device"
+            is OmniAudioEngine.Status.Unavailable -> "Engine unavailable on this device"
+            is OmniAudioEngine.Status.NotAttached -> "Starting engine…"
+        }
+
         return NotificationCompat.Builder(this, "OMNI_EQ_CHANNEL")
-            .setContentTitle("OmniEqualizer Active")
-            .setContentText("Smart AI Engine is optimizing your audio")
+            .setContentTitle("OmniEqualizer")
+            .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_media_play) // Placeholder icon
             .setContentIntent(pendingIntent)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
