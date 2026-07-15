@@ -1,16 +1,19 @@
 package com.omni.equalizer.ui
-import androidx.compose.ui.res.stringResource
-import com.omni.equalizer.R
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -18,49 +21,45 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omni.equalizer.R
 import com.omni.equalizer.data.EqualizerPreset
-import com.omni.equalizer.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.atan2
-import kotlin.math.PI
+import com.omni.equalizer.ui.theme.OmniRadius
+import com.omni.equalizer.ui.theme.OmniSpacing
+
+/**
+ * ── Redesigned bottom sheets ──
+ * Same three sheets (Help / Presets list / Preset options), rebuilt on the shared grabber +
+ * spacing rhythm from [SharedComponents]. Preset rows go from "kebab menu on the left, a row
+ * of tiny tag chips and a name crammed on the right" to a single clear line per preset: a
+ * radio-style selection indicator, the name, one small muted tag caption, and the options menu
+ * — each with one job. The options sheet collapses four near-duplicated RTL-aware Row blocks
+ * into one reusable row.
+ */
 
 // ── BOTTOM SHEET CONTENT: HELP ──
 @Composable
@@ -72,28 +71,33 @@ fun HelpSheetContent(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = OmniSpacing.xl, vertical = OmniSpacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SheetGrabber()
+
+        Spacer(modifier = Modifier.height(OmniSpacing.sm))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onDismiss) {
-                Icon(imageVector = Icons.Rounded.Close, contentDescription = "Close", tint = Color.White)
-            }
+            OmniIconBadge(icon = Icons.AutoMirrored.Rounded.HelpOutline, tint = OmniAccentIndigo)
             Text(
                 text = stringResource(R.string.help_title),
                 color = Color.White,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
+            )
+            OmniCircularIconButton(
+                icon = Icons.Rounded.Close,
+                contentDescription = "Close",
+                onClick = onDismiss
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(OmniSpacing.lg))
 
         Text(
             text = stringResource(R.string.help_body),
@@ -103,8 +107,8 @@ fun HelpSheetContent(
             textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
             modifier = Modifier.fillMaxWidth()
         )
-        
-        Spacer(modifier = Modifier.height(24.dp))
+
+        Spacer(modifier = Modifier.height(OmniSpacing.xl))
     }
 }
 
@@ -121,8 +125,8 @@ fun PresetsSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 500.dp)
-            .padding(top = 12.dp, bottom = 24.dp),
+            .heightIn(max = 560.dp)
+            .padding(top = OmniSpacing.sm, bottom = OmniSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SheetGrabber()
@@ -130,95 +134,118 @@ fun PresetsSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 18.dp),
+                .padding(horizontal = OmniSpacing.xl, vertical = OmniSpacing.lg),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(
-                onClick = onAddCustomPreset,
-                colors = ButtonDefaults.buttonColors(containerColor = OmniAccentIndigo),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Icon", modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(stringResource(R.string.add_preset_btn), fontSize = 12.sp, color = Color.White)
-            }
-
             Text(
                 text = stringResource(R.string.load_preset),
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onAddCustomPreset,
+                colors = ButtonDefaults.buttonColors(containerColor = OmniAccentIndigo),
+                shape = RoundedCornerShape(OmniRadius.medium),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.add_preset_btn), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        }
 
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .weight(1f, fill = false)
+                .padding(horizontal = OmniSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(OmniSpacing.xs)
         ) {
             items(presets) { preset ->
                 val isSelected = preset.id == activePresetId
-                
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) OmniAccentIndigo.copy(alpha = 0.18f) else OmniCardBg)
-                        .clickable { onPresetSelect(preset) }
-                        .padding(horizontal = 16.dp, vertical = 18.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { onOptionsClick(preset) }) {
-                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Options", tint = OmniMutedText)
-                    }
+                PresetRow(
+                    preset = preset,
+                    isSelected = isSelected,
+                    isArabic = isArabic,
+                    onClick = { onPresetSelect(preset) },
+                    onOptionsClick = { onOptionsClick(preset) }
+                )
+            }
+        }
+    }
+}
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.End,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        preset.tags.split(",").forEach { tag ->
-                            if (tag.isNotBlank()) {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 4.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(Color(0xFF121220))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = tag.trim(),
-                                        color = OmniAccentTeal,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
+@Composable
+private fun PresetRow(
+    preset: EqualizerPreset,
+    isSelected: Boolean,
+    isArabic: Boolean,
+    onClick: () -> Unit,
+    onOptionsClick: () -> Unit
+) {
+    val tagCaption = preset.tags.split(",").map { it.trim() }.filter { it.isNotBlank() }.joinToString(" · ")
 
-                        Spacer(modifier = Modifier.width(12.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(OmniRadius.large))
+            .background(if (isSelected) OmniAccentIndigo.copy(alpha = 0.14f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.md),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Selection indicator — a simple filled-vs-outline dot reads clearer at a glance
+            // than a checkmark icon competing with the name for attention.
+            Box(
+                modifier = Modifier.size(18.dp).clip(CircleShape).background(
+                    if (isSelected) OmniAccentIndigo else Color.White.copy(alpha = 0.08f)
+                ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Selected",
+                        tint = Color.White,
+                        modifier = Modifier.size(11.dp)
+                    )
+                }
+            }
 
+            val textColumn = @Composable {
+                Column(horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start) {
+                    Text(
+                        text = preset.name,
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start
+                    )
+                    if (tagCaption.isNotBlank()) {
                         Text(
-                            text = preset.name,
-                            color = Color.White,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.End
+                            text = tagCaption,
+                            color = OmniAccentTeal,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start
                         )
-                        
-                        if (isSelected) {
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Icon(imageVector = Icons.Default.Check, contentDescription = "Checked", tint = Color(0xFFFF6B9D), modifier = Modifier.size(16.dp))
-                        }
                     }
                 }
             }
+            textColumn()
+        }
+
+        IconButton(onClick = onOptionsClick, modifier = Modifier.size(36.dp)) {
+            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Options", tint = OmniMutedText, modifier = Modifier.size(19.dp))
         }
     }
 }
@@ -235,107 +262,87 @@ fun PresetOptionsSheetContent(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp),
+            .padding(horizontal = OmniSpacing.xl, vertical = OmniSpacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SheetGrabber()
 
+        Spacer(modifier = Modifier.height(OmniSpacing.sm))
+
         Text(
             text = preset.name,
             color = Color.White,
-            fontSize = 18.sp,
+            fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth(),
             textAlign = if (isArabic) TextAlign.End else TextAlign.Start
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(OmniSpacing.md))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    onEdit()
-                    onDismiss()
-                }
-                .padding(vertical = 12.dp),
-            horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isArabic) {
-                Text(stringResource(R.string.edit_preset), color = Color.White, fontSize = 14.sp)
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
-            } else {
-                Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.edit_preset), color = Color.White, fontSize = 14.sp)
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onDismiss() }
-                .padding(vertical = 12.dp),
-            horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isArabic) {
-                Text(stringResource(R.string.share_profile), color = Color.White, fontSize = 14.sp)
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
-            } else {
-                Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.share_profile), color = Color.White, fontSize = 14.sp)
-            }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onDismiss() }
-                .padding(vertical = 12.dp),
-            horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isArabic) {
-                Text(stringResource(R.string.import_profile), color = Color.White, fontSize = 14.sp)
-                Spacer(modifier = Modifier.width(12.dp))
-                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
-            } else {
-                Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.import_profile), color = Color.White, fontSize = 14.sp)
-            }
-        }
-
+        OptionRow(
+            icon = Icons.Rounded.Edit,
+            label = stringResource(R.string.edit_preset),
+            tint = OmniAccentIndigo,
+            isArabic = isArabic,
+            onClick = { onEdit(); onDismiss() }
+        )
+        OptionRow(
+            icon = Icons.Rounded.Share,
+            label = stringResource(R.string.share_profile),
+            tint = OmniAccentTeal,
+            isArabic = isArabic,
+            onClick = onDismiss
+        )
+        OptionRow(
+            icon = Icons.Rounded.FileDownload,
+            label = stringResource(R.string.import_profile),
+            tint = OmniAccentTeal,
+            isArabic = isArabic,
+            onClick = onDismiss
+        )
         if (preset.isCustom) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        onDelete()
-                        onDismiss()
-                    }
-                    .padding(vertical = 12.dp),
-                horizontalArrangement = if (isArabic) Arrangement.End else Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isArabic) {
-                    Text(stringResource(R.string.delete_profile), color = Color(0xFFEF4444), fontSize = 14.sp)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
-                } else {
-                    Icon(imageVector = Icons.Rounded.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(stringResource(R.string.delete_profile), color = Color(0xFFEF4444), fontSize = 14.sp)
-                }
-            }
+            OptionRow(
+                icon = Icons.Rounded.Delete,
+                label = stringResource(R.string.delete_profile),
+                tint = OmniAccentRed,
+                isArabic = isArabic,
+                onClick = { onDelete(); onDismiss() }
+            )
         }
-        
-        Spacer(modifier = Modifier.height(24.dp))
+
+        Spacer(modifier = Modifier.height(OmniSpacing.lg))
     }
 }
 
+/** One reusable action row — replaces four copies of the same "icon + label, order flipped
+ *  for RTL" block that used to be written out by hand for Edit/Share/Import/Delete. */
+@Composable
+private fun OptionRow(
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    isArabic: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(OmniRadius.medium))
+            .clickable(onClick = onClick)
+            .padding(vertical = OmniSpacing.md, horizontal = OmniSpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md, if (isArabic) Alignment.End else Alignment.Start),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val iconEl = @Composable { OmniIconBadge(icon = icon, tint = tint) }
+        val labelEl = @Composable { Text(label, color = if (tint == OmniAccentRed) tint else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium) }
+
+        if (isArabic) {
+            labelEl()
+            iconEl()
+        } else {
+            iconEl()
+            labelEl()
+        }
+    }
+}
