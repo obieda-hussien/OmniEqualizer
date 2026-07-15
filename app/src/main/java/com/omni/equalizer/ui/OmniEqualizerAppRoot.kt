@@ -138,9 +138,10 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                     if (showHelpSheet) {
                         ModalBottomSheet(
                             onDismissRequest = { showHelpSheet = false },
-                            containerColor = Color(0xFF1A1B2E),
+                            containerColor = OmniCardBg,
                             contentColor = Color.White,
-                            dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFF2E2F45)) }
+                            dragHandle = null,
+                            shape = RoundedCornerShape(topStart = OmniRadius.xl, topEnd = OmniRadius.xl)
                         ) {
                             HelpSheetContent(isArabic = isArabic, onDismiss = { showHelpSheet = false })
                         }
@@ -150,9 +151,10 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                     if (showPresetSheet) {
                         ModalBottomSheet(
                             onDismissRequest = { showPresetSheet = false },
-                            containerColor = Color(0xFF1A1B2E),
+                            containerColor = OmniCardBg,
                             contentColor = Color.White,
-                            dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFF2E2F45)) }
+                            dragHandle = null,
+                            shape = RoundedCornerShape(topStart = OmniRadius.xl, topEnd = OmniRadius.xl)
                         ) {
                             PresetsSheetContent(
                                 presets = presets,
@@ -180,9 +182,10 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                         val preset = selectedPresetForOption!!
                         ModalBottomSheet(
                             onDismissRequest = { showOptionsSheet = false },
-                            containerColor = Color(0xFF1A1B2E),
+                            containerColor = OmniCardBg,
                             contentColor = Color.White,
-                            dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFF2E2F45)) }
+                            dragHandle = null,
+                            shape = RoundedCornerShape(topStart = OmniRadius.xl, topEnd = OmniRadius.xl)
                         ) {
                             PresetOptionsSheetContent(
                                 preset = preset,
@@ -205,7 +208,8 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                         var presetName by remember { mutableStateOf("") }
                         AlertDialog(
                             onDismissRequest = { showSavePresetDialog = false },
-                            containerColor = Color(0xFF1A1B2E),
+                            containerColor = OmniCardBgElevated,
+                            shape = RoundedCornerShape(OmniRadius.xl),
                             title = {
                                 Text(
                                     text = Loc.get("save_preset_title", isArabic),
@@ -220,14 +224,15 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                                 OutlinedTextField(
                                     value = presetName,
                                     onValueChange = { presetName = it },
-                                    placeholder = { Text(Loc.get("save_preset_placeholder", isArabic), color = Color(0xFF64748B)) },
+                                    placeholder = { Text(Loc.get("save_preset_placeholder", isArabic), color = OmniFaintText) },
                                     singleLine = true,
+                                    shape = RoundedCornerShape(OmniRadius.medium),
                                     textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = Color(0xFF6C63FF),
-                                        unfocusedBorderColor = Color(0xFF2E2F45),
-                                        focusedContainerColor = Color(0xFF121220),
-                                        unfocusedContainerColor = Color(0xFF121220)
+                                        focusedBorderColor = OmniAccentIndigo,
+                                        unfocusedBorderColor = OmniCardBorder,
+                                        focusedContainerColor = OmniBackground,
+                                        unfocusedContainerColor = OmniBackground
                                     ),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -242,14 +247,15 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                                             showSavePresetDialog = false
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6C63FF))
+                                    shape = RoundedCornerShape(OmniRadius.medium),
+                                    colors = ButtonDefaults.buttonColors(containerColor = OmniAccentIndigo)
                                 ) {
-                                    Text(Loc.get("save_btn", isArabic), color = Color.White)
+                                    Text(Loc.get("save_btn", isArabic), color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { showSavePresetDialog = false }) {
-                                    Text(Loc.get("cancel_btn", isArabic), color = Color(0xFFFF6B9D))
+                                    Text(Loc.get("cancel_btn", isArabic), color = OmniMutedText)
                                 }
                             }
                         )
