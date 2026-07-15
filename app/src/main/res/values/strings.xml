@@ -37,9 +37,9 @@
     <string name="always_bind_global">Always bind to Global Mix</string>
     <string name="always_bind_global_desc">Enable this only if you experience issues attaching effects</string>
     <string name="connect_music_only">Connect only to music players</string>
-    <string name="connect_music_only_desc">By default, equalizer attaches to global mix...</string>
+    <string name="connect_music_only_desc">By default, equalizer attaches to global mix…</string>
     <string name="frame_duration">Frame Duration (ms)</string>
-    <string name="frame_duration_desc">Current value is 10ms. Increasing will improve quality...</string>
+    <string name="frame_duration_desc">Current value is 10ms. Increasing will improve quality…</string>
     <string name="reverb">Reverb Effects</string>
     <string name="reverb_desc">Reverb effects disabled</string>
     <string name="volume_bar">Volume Slider Bar</string>
@@ -47,13 +47,13 @@
     <string name="use_10_bands">Use 10-Band Equalizer</string>
     <string name="use_10_bands_desc">Customize sound with ultra fine 10-band controls</string>
     <string name="use_legacy">Use Legacy Effects</string>
-    <string name="use_legacy_desc">Not recommended. Enable only if standard effects fail to load...</string>
+    <string name="use_legacy_desc">Not recommended. Enable only if standard effects fail to load…</string>
     <string name="notifications">Hide/Show Notifications</string>
     <string name="notifications_desc">Open app system notification settings</string>
     <string name="saved_bt">Saved Bluetooth Devices</string>
     <string name="saved_bt_desc">View saved or historical Bluetooth audio devices</string>
     <string name="save_preset_title">Save Custom Preset</string>
-    <string name="save_preset_placeholder">Preset Name...</string>
+    <string name="save_preset_placeholder">Preset Name…</string>
     <string name="save_btn">Save</string>
     <string name="cancel_btn">Cancel</string>
     <string name="delete_confirm">Are you sure you want to delete this preset?</string>

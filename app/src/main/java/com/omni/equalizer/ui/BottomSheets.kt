@@ -1,4 +1,6 @@
 package com.omni.equalizer.ui
+import androidx.compose.ui.res.stringResource
+import com.omni.equalizer.R
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -84,7 +86,7 @@ fun HelpSheetContent(
                 Icon(imageVector = Icons.Rounded.Close, contentDescription = "Close", tint = Color.White)
             }
             Text(
-                text = Loc.get("help_title", isArabic),
+                text = stringResource(R.string.help_title),
                 color = Color.White,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
@@ -94,7 +96,7 @@ fun HelpSheetContent(
         Spacer(modifier = Modifier.height(18.dp))
 
         Text(
-            text = Loc.get("help_body", isArabic),
+            text = stringResource(R.string.help_body),
             color = OmniMutedText,
             fontSize = 14.sp,
             lineHeight = 22.sp,
@@ -128,7 +130,7 @@ fun PresetsSheetContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = 24.dp, vertical = 18.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -139,11 +141,11 @@ fun PresetsSheetContent(
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Icon", modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(Loc.get("add_preset_btn", isArabic), fontSize = 12.sp, color = Color.White)
+                Text(stringResource(R.string.add_preset_btn), fontSize = 12.sp, color = Color.White)
             }
 
             Text(
-                text = Loc.get("load_preset", isArabic),
+                text = stringResource(R.string.load_preset),
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
@@ -168,7 +170,7 @@ fun PresetsSheetContent(
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isSelected) OmniAccentIndigo.copy(alpha = 0.18f) else OmniCardBg)
                         .clickable { onPresetSelect(preset) }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                        .padding(horizontal = 16.dp, vertical = 18.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -261,13 +263,13 @@ fun PresetOptionsSheetContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isArabic) {
-                Text(Loc.get("edit_preset", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.edit_preset), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
             } else {
                 Icon(imageVector = Icons.Rounded.Edit, contentDescription = "Edit", tint = OmniAccentIndigo)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(Loc.get("edit_preset", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.edit_preset), color = Color.White, fontSize = 14.sp)
             }
         }
 
@@ -280,13 +282,13 @@ fun PresetOptionsSheetContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isArabic) {
-                Text(Loc.get("share_profile", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.share_profile), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
             } else {
                 Icon(imageVector = Icons.Rounded.Share, contentDescription = "Share", tint = OmniAccentTeal)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(Loc.get("share_profile", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.share_profile), color = Color.White, fontSize = 14.sp)
             }
         }
 
@@ -299,13 +301,13 @@ fun PresetOptionsSheetContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isArabic) {
-                Text(Loc.get("import_profile", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.import_profile), color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.width(12.dp))
                 Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
             } else {
                 Icon(imageVector = Icons.Rounded.FileDownload, contentDescription = "Import", tint = OmniAccentTeal)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(Loc.get("import_profile", isArabic), color = Color.White, fontSize = 14.sp)
+                Text(stringResource(R.string.import_profile), color = Color.White, fontSize = 14.sp)
             }
         }
 
@@ -322,13 +324,13 @@ fun PresetOptionsSheetContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isArabic) {
-                    Text(Loc.get("delete_profile", isArabic), color = Color(0xFFEF4444), fontSize = 14.sp)
+                    Text(stringResource(R.string.delete_profile), color = Color(0xFFEF4444), fontSize = 14.sp)
                     Spacer(modifier = Modifier.width(12.dp))
                     Icon(imageVector = Icons.Rounded.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
                 } else {
                     Icon(imageVector = Icons.Rounded.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(Loc.get("delete_profile", isArabic), color = Color(0xFFEF4444), fontSize = 14.sp)
+                    Text(stringResource(R.string.delete_profile), color = Color(0xFFEF4444), fontSize = 14.sp)
                 }
             }
         }

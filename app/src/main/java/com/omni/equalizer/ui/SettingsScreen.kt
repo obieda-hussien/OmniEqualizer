@@ -1,4 +1,6 @@
 package com.omni.equalizer.ui
+import androidx.compose.ui.res.stringResource
+import com.omni.equalizer.R
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -25,7 +27,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.*
-import androidx.compose.material.icons.automirrored.rounded.CompareArrows
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -99,7 +100,7 @@ fun EqualizerSettingsScreen(
                     )
                 }
                 Text(
-                    text = Loc.get("settings", isArabic),
+                    text = stringResource(R.string.settings),
                     color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -115,13 +116,13 @@ fun EqualizerSettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(OmniSpacing.sm)
             ) {
                 // ── Appearance ──
-                item { SectionLabel(Loc.get("settings_group_appearance", isArabic)) }
+                item { SectionLabel(stringResource(R.string.settings_group_appearance)) }
 
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Language,
-                        title = Loc.get("language", isArabic),
-                        desc = Loc.get("language_desc", isArabic),
+                        title = stringResource(R.string.language),
+                        desc = stringResource(R.string.language_desc),
                         options = listOf("ar", "en"),
                         selectedOption = state.currentLanguage,
                         onOptionSelected = { viewModel.updateLanguage(it) },
@@ -132,8 +133,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.ColorLens,
-                        title = Loc.get("appearance", isArabic),
-                        desc = Loc.get("appearance_desc", isArabic) + ": " + state.currentTheme,
+                        title = stringResource(R.string.appearance),
+                        desc = stringResource(R.string.appearance_desc) + ": " + state.currentTheme,
                         options = listOf("Cosmic", "Dark", "Light"),
                         selectedOption = state.currentTheme,
                         onOptionSelected = { viewModel.updateTheme(it) },
@@ -144,12 +145,12 @@ fun EqualizerSettingsScreen(
                 item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
 
                 // ── Audio Engine ──
-                item { SectionLabel(Loc.get("settings_group_engine", isArabic)) }
+                item { SectionLabel(stringResource(R.string.settings_group_engine)) }
 
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Audiotrack,
-                        title = Loc.get("bass_freq", isArabic),
+                        title = stringResource(R.string.bass_freq),
                         desc = "Default: 80Hz",
                         options = listOf("50Hz", "80Hz", "100Hz", "120Hz"),
                         selectedOption = state.bassFrequency,
@@ -161,7 +162,7 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.GraphicEq,
-                        title = Loc.get("bass_gain", isArabic),
+                        title = stringResource(R.string.bass_gain),
                         desc = "Default: 15dB",
                         options = listOf("10dB", "15dB", "20dB", "25dB"),
                         selectedOption = state.bassMaxGain,
@@ -173,7 +174,7 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.AutoMirrored.Rounded.VolumeUp,
-                        title = Loc.get("loudness_gain", isArabic),
+                        title = stringResource(R.string.loudness_gain),
                         desc = "Default: 20dB",
                         options = listOf("15dB", "20dB", "25dB", "30dB"),
                         selectedOption = state.loudnessMaxGain,
@@ -185,8 +186,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Balance,
-                        title = Loc.get("audio_balance", isArabic),
-                        desc = Loc.get("audio_balance_desc", isArabic),
+                        title = stringResource(R.string.audio_balance),
+                        desc = stringResource(R.string.audio_balance_desc),
                         checked = state.audioBalanceEnabled,
                         onCheckedChange = { viewModel.toggleAudioBalance() },
                         isArabic = isArabic
@@ -196,8 +197,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Merge,
-                        title = Loc.get("always_bind_global", isArabic),
-                        desc = Loc.get("always_bind_global_desc", isArabic),
+                        title = stringResource(R.string.always_bind_global),
+                        desc = stringResource(R.string.always_bind_global_desc),
                         checked = state.globalMixAlwaysBound,
                         onCheckedChange = { viewModel.toggleGlobalMixAlwaysBound() },
                         isArabic = isArabic
@@ -207,8 +208,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.MusicNote,
-                        title = Loc.get("connect_music_only", isArabic),
-                        desc = Loc.get("connect_music_only_desc", isArabic),
+                        title = stringResource(R.string.connect_music_only),
+                        desc = stringResource(R.string.connect_music_only_desc),
                         checked = state.connectToMusicPlayersOnly,
                         onCheckedChange = { viewModel.toggleConnectToMusicPlayersOnly() },
                         isArabic = isArabic
@@ -218,7 +219,7 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Timelapse,
-                        title = Loc.get("frame_duration", isArabic),
+                        title = stringResource(R.string.frame_duration),
                         desc = "Default: 10ms",
                         options = listOf("5ms", "10ms", "15ms", "20ms"),
                         selectedOption = state.frameDurationMs,
@@ -230,8 +231,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Hearing,
-                        title = Loc.get("reverb", isArabic),
-                        desc = Loc.get("reverb_desc", isArabic),
+                        title = stringResource(R.string.reverb),
+                        desc = stringResource(R.string.reverb_desc),
                         checked = state.reverbEnabled,
                         onCheckedChange = { viewModel.toggleReverb() },
                         isArabic = isArabic
@@ -241,8 +242,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.GridOn,
-                        title = Loc.get("use_10_bands", isArabic),
-                        desc = Loc.get("use_10_bands_desc", isArabic),
+                        title = stringResource(R.string.use_10_bands),
+                        desc = stringResource(R.string.use_10_bands_desc),
                         checked = state.use10Bands,
                         onCheckedChange = { viewModel.toggle10Bands() },
                         isArabic = isArabic
@@ -252,8 +253,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.ReportProblem,
-                        title = Loc.get("use_legacy", isArabic),
-                        desc = Loc.get("use_legacy_desc", isArabic),
+                        title = stringResource(R.string.use_legacy),
+                        desc = stringResource(R.string.use_legacy_desc),
                         checked = state.useLegacyEffects,
                         onCheckedChange = { viewModel.toggleLegacyEffects() },
                         isArabic = isArabic
@@ -263,13 +264,13 @@ fun EqualizerSettingsScreen(
                 item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
 
                 // ── Notifications ──
-                item { SectionLabel(Loc.get("settings_group_notifications", isArabic)) }
+                item { SectionLabel(stringResource(R.string.settings_group_notifications)) }
 
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Notifications,
-                        title = Loc.get("notifications", isArabic),
-                        desc = Loc.get("notifications_desc", isArabic),
+                        title = stringResource(R.string.notifications),
+                        desc = stringResource(R.string.notifications_desc),
                         checked = state.showNotification,
                         onCheckedChange = { viewModel.toggleShowNotification() },
                         isArabic = isArabic
@@ -279,8 +280,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.LinearScale,
-                        title = Loc.get("volume_bar", isArabic),
-                        desc = Loc.get("volume_bar_desc", isArabic),
+                        title = stringResource(R.string.volume_bar),
+                        desc = stringResource(R.string.volume_bar_desc),
                         checked = state.showVolumeSlider,
                         onCheckedChange = { viewModel.toggleVolumeSlider() },
                         isArabic = isArabic
@@ -290,13 +291,13 @@ fun EqualizerSettingsScreen(
                 item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
 
                 // ── Advanced ──
-                item { SectionLabel(Loc.get("settings_group_advanced", isArabic)) }
+                item { SectionLabel(stringResource(R.string.settings_group_advanced)) }
 
                 item {
                     SettingsClickableItem(
                         icon = Icons.Rounded.Backup,
-                        title = Loc.get("backup", isArabic),
-                        desc = Loc.get("backup_desc", isArabic),
+                        title = stringResource(R.string.backup),
+                        desc = stringResource(R.string.backup_desc),
                         onClick = {},
                         isArabic = isArabic
                     )
@@ -305,8 +306,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsClickableItem(
                         icon = Icons.Rounded.Bluetooth,
-                        title = Loc.get("saved_bt", isArabic),
-                        desc = Loc.get("saved_bt_desc", isArabic),
+                        title = stringResource(R.string.saved_bt),
+                        desc = stringResource(R.string.saved_bt_desc),
                         onClick = {},
                         isArabic = isArabic
                     )
@@ -344,7 +345,7 @@ fun SettingsDropdownItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded }
-                .padding(OmniSpacing.lg),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -421,7 +422,7 @@ fun SettingsClickableItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(OmniSpacing.lg),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -480,7 +481,7 @@ fun SettingsToggleItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(OmniSpacing.lg),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

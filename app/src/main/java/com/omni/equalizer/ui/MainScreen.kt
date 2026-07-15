@@ -1,4 +1,6 @@
 package com.omni.equalizer.ui
+import androidx.compose.ui.res.stringResource
+import com.omni.equalizer.R
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -155,7 +157,7 @@ fun EqualizerMainScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = OmniSpacing.lg, vertical = OmniSpacing.sm),
+                    .padding(horizontal = OmniSpacing.xxl, vertical = OmniSpacing.md),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -181,7 +183,7 @@ fun EqualizerMainScreen(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = Loc.get("title", isArabic),
+                        text = stringResource(R.string.title),
                         color = Color.White,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold
@@ -203,10 +205,10 @@ fun EqualizerMainScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = when {
-                                state.isBypassed -> Loc.get("bypassed_badge", isArabic)
-                                state.isEnabled && state.isEngineFullyReal -> Loc.get("engine_active_badge", isArabic)
-                                state.isEnabled -> Loc.get("engine_unavailable_badge", isArabic)
-                                else -> Loc.get("custom", isArabic)
+                                state.isBypassed -> stringResource(R.string.bypassed_badge)
+                                state.isEnabled && state.isEngineFullyReal -> stringResource(R.string.engine_active_badge)
+                                state.isEnabled -> stringResource(R.string.engine_unavailable_badge)
+                                else -> stringResource(R.string.custom)
                             },
                             color = MutedText,
                             fontSize = 10.sp
@@ -220,10 +222,10 @@ fun EqualizerMainScreen(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = OmniSpacing.lg)
+                    .padding(horizontal = OmniSpacing.xxl)
             ) {
                 // ── SECTION 1: Equalizer Bands ──
-                SectionLabel(Loc.get("section_eq_bands", isArabic))
+                SectionLabel(stringResource(R.string.section_eq_bands))
                 SectionCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -231,7 +233,7 @@ fun EqualizerMainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = Loc.get("eq_toggle", isArabic),
+                            text = stringResource(R.string.eq_toggle),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -315,7 +317,7 @@ fun EqualizerMainScreen(
                             )
                             Spacer(modifier = Modifier.width(OmniSpacing.xs))
                             Text(
-                                text = Loc.get("smart_btn", isArabic),
+                                text = stringResource(R.string.smart_btn),
                                 color = Color.White,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -331,7 +333,7 @@ fun EqualizerMainScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = if (state.isSmartOptimized) Loc.get("smart_ai", isArabic) else state.selectedPresetName,
+                                text = if (state.isSmartOptimized) stringResource(R.string.smart_ai) else state.selectedPresetName,
                                 color = AccentTeal,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -353,14 +355,14 @@ fun EqualizerMainScreen(
                 Spacer(modifier = Modifier.height(OmniSpacing.xl))
 
                 // ── SECTION 2: Sound Effects (quick toggles + the three FX dials) ──
-                SectionLabel(Loc.get("section_effects", isArabic))
+                SectionLabel(stringResource(R.string.section_effects))
                 SectionCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(OmniSpacing.sm)
                     ) {
                         CompactToggleChip(
-                            label = Loc.get("bypass_label", isArabic),
+                            label = stringResource(R.string.bypass_label),
                             icon = Icons.AutoMirrored.Rounded.CompareArrows,
                             isOn = state.isBypassed,
                             isEnabled = state.isEnabled,
@@ -369,7 +371,7 @@ fun EqualizerMainScreen(
                             modifier = Modifier.weight(1f)
                         )
                         CompactToggleChip(
-                            label = Loc.get("auto_loudness_label", isArabic),
+                            label = stringResource(R.string.auto_loudness_label),
                             icon = Icons.Rounded.GraphicEq,
                             isOn = state.autoLoudnessNormalization,
                             isEnabled = state.isEnabled,
@@ -386,7 +388,7 @@ fun EqualizerMainScreen(
                         horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md)
                     ) {
                         CircularControlDial(
-                            label = Loc.get("bass_boost", isArabic),
+                            label = stringResource(R.string.bass_boost),
                             value = state.bassBoost,
                             isEnabled = state.isEnabled && state.bassBoostEnabled,
                             onValueChange = { viewModel.updateBassBoost(it) },
@@ -397,7 +399,7 @@ fun EqualizerMainScreen(
                         )
 
                         CircularControlDial(
-                            label = Loc.get("loudness", isArabic),
+                            label = stringResource(R.string.loudness),
                             value = state.loudness,
                             isEnabled = state.isEnabled && state.loudnessEnabled,
                             onValueChange = { viewModel.updateLoudness(it) },
@@ -408,7 +410,7 @@ fun EqualizerMainScreen(
                         )
 
                         CircularControlDial(
-                            label = Loc.get("virtualizer", isArabic),
+                            label = stringResource(R.string.virtualizer),
                             value = state.virtualizer,
                             isEnabled = state.isEnabled && state.virtualizerEnabled,
                             onValueChange = { viewModel.updateVirtualizer(it) },
@@ -424,7 +426,7 @@ fun EqualizerMainScreen(
 
                 // ── SECTION 3: System Volume ──
                 if (state.showVolumeSlider) {
-                    SectionLabel(Loc.get("section_volume", isArabic))
+                    SectionLabel(stringResource(R.string.section_volume))
                     SectionCard {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -440,7 +442,7 @@ fun EqualizerMainScreen(
                                 )
                                 Spacer(modifier = Modifier.width(OmniSpacing.sm))
                                 Text(
-                                    text = Loc.get("volume", isArabic),
+                                    text = stringResource(R.string.volume),
                                     color = Color.White,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
@@ -476,7 +478,7 @@ fun EqualizerMainScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = OmniSpacing.lg, vertical = OmniSpacing.xs)
+                        .padding(horizontal = OmniSpacing.xxl, vertical = OmniSpacing.sm)
                         .clip(RoundedCornerShape(OmniRadius.small))
                         .background(Color(0xFFFFB020).copy(alpha = 0.14f))
                         .border(1.dp, Color(0xFFFFB020).copy(alpha = 0.35f), RoundedCornerShape(OmniRadius.small))
@@ -524,7 +526,7 @@ fun EqualizerMainScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = Loc.get("global_mix", isArabic),
+                        text = stringResource(R.string.global_mix),
                         color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -555,7 +557,7 @@ fun EqualizerMainScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = Loc.get("general_mode", isArabic),
+                        text = stringResource(R.string.general_mode),
                         color = AccentTeal,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold

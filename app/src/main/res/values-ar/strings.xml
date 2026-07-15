@@ -37,9 +37,9 @@
     <string name="always_bind_global">ربط دائمًا بـ Global Mix</string>
     <string name="always_bind_global_desc">قم بتمكين هذا فقط إذا كنت تواجه مشكلات في إرفاق التأثيرات</string>
     <string name="connect_music_only">قم بالتوصيل فقط بمشغلات الموسيقى</string>
-    <string name="connect_music_only_desc">بشكل افتراضي، سيتم إرفاق المعادل بالمزيج العام...</string>
+    <string name="connect_music_only_desc">بشكل افتراضي، سيتم إرفاق المعادل بالمزيج العام…</string>
     <string name="frame_duration">مدة الإطار (بالملي ثانية)</string>
-    <string name="frame_duration_desc">القيمة الحالية هي 10ms. ستؤدي زيادة جودة الصوت...</string>
+    <string name="frame_duration_desc">القيمة الحالية هي 10ms. ستؤدي زيادة جودة الصوت…</string>
     <string name="reverb">تأثيرات الارتداد</string>
     <string name="reverb_desc">تم تعطيل تأثيرات الارتداد</string>
     <string name="volume_bar">شريط تمرير مستوى الصوت</string>
@@ -47,13 +47,13 @@
     <string name="use_10_bands">استخدم معادل الصوت 10 نطاقات</string>
     <string name="use_10_bands_desc">باستخدام معادل الصوت 10 نطاقات</string>
     <string name="use_legacy">استخدم التأثيرات القديمة</string>
-    <string name="use_legacy_desc">لا يُنصح. قم بتمكين هذا فقط إذا كانت التأثيرات لا تعمل...</string>
+    <string name="use_legacy_desc">لا يُنصح. قم بتمكين هذا فقط إذا كانت التأثيرات لا تعمل…</string>
     <string name="notifications">إخفاء/إظهار الإشعارات</string>
     <string name="notifications_desc">افتح إعدادات إشعارات التطبيق</string>
     <string name="saved_bt">أجهزة البلوتوث المحفوظة</string>
     <string name="saved_bt_desc">عرض أجهزة Bluetooth المحفوظة</string>
     <string name="save_preset_title">حفظ كإعداد مسبق</string>
-    <string name="save_preset_placeholder">اسم الإعداد المسبق...</string>
+    <string name="save_preset_placeholder">اسم الإعداد المسبق…</string>
     <string name="save_btn">حفظ</string>
     <string name="cancel_btn">إلغاء</string>
     <string name="delete_confirm">هل أنت متأكد من حذف الإعداد المسبق؟</string>
