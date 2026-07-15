@@ -1,4 +1,6 @@
 package com.omni.equalizer.ui
+import androidx.compose.ui.res.stringResource
+import com.omni.equalizer.R
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -25,6 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,7 +85,7 @@ fun EqualizerSettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = OmniSpacing.lg, vertical = OmniSpacing.md),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -97,7 +100,7 @@ fun EqualizerSettingsScreen(
                     )
                 }
                 Text(
-                    text = Loc.get("settings", isArabic),
+                    text = stringResource(R.string.settings),
                     color = Color.White,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -109,14 +112,17 @@ fun EqualizerSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = OmniSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(OmniSpacing.sm)
             ) {
+                // ── Appearance ──
+                item { SectionLabel(stringResource(R.string.settings_group_appearance)) }
+
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Language,
-                        title = Loc.get("language", isArabic),
-                        desc = Loc.get("language_desc", isArabic),
+                        title = stringResource(R.string.language),
+                        desc = stringResource(R.string.language_desc),
                         options = listOf("ar", "en"),
                         selectedOption = state.currentLanguage,
                         onOptionSelected = { viewModel.updateLanguage(it) },
@@ -127,8 +133,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.ColorLens,
-                        title = Loc.get("appearance", isArabic),
-                        desc = Loc.get("appearance_desc", isArabic) + ": " + state.currentTheme,
+                        title = stringResource(R.string.appearance),
+                        desc = stringResource(R.string.appearance_desc) + ": " + state.currentTheme,
                         options = listOf("Cosmic", "Dark", "Light"),
                         selectedOption = state.currentTheme,
                         onOptionSelected = { viewModel.updateTheme(it) },
@@ -136,20 +142,15 @@ fun EqualizerSettingsScreen(
                     )
                 }
 
-                item {
-                    SettingsClickableItem(
-                        icon = Icons.Rounded.Backup,
-                        title = Loc.get("backup", isArabic),
-                        desc = Loc.get("backup_desc", isArabic),
-                        onClick = {},
-                        isArabic = isArabic
-                    )
-                }
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Audio Engine ──
+                item { SectionLabel(stringResource(R.string.settings_group_engine)) }
 
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Audiotrack,
-                        title = Loc.get("bass_freq", isArabic),
+                        title = stringResource(R.string.bass_freq),
                         desc = "Default: 80Hz",
                         options = listOf("50Hz", "80Hz", "100Hz", "120Hz"),
                         selectedOption = state.bassFrequency,
@@ -161,7 +162,7 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.GraphicEq,
-                        title = Loc.get("bass_gain", isArabic),
+                        title = stringResource(R.string.bass_gain),
                         desc = "Default: 15dB",
                         options = listOf("10dB", "15dB", "20dB", "25dB"),
                         selectedOption = state.bassMaxGain,
@@ -172,8 +173,8 @@ fun EqualizerSettingsScreen(
 
                 item {
                     SettingsDropdownItem(
-                        icon = Icons.Rounded.VolumeUp,
-                        title = Loc.get("loudness_gain", isArabic),
+                        icon = Icons.AutoMirrored.Rounded.VolumeUp,
+                        title = stringResource(R.string.loudness_gain),
                         desc = "Default: 20dB",
                         options = listOf("15dB", "20dB", "25dB", "30dB"),
                         selectedOption = state.loudnessMaxGain,
@@ -185,8 +186,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Balance,
-                        title = Loc.get("audio_balance", isArabic),
-                        desc = Loc.get("audio_balance_desc", isArabic),
+                        title = stringResource(R.string.audio_balance),
+                        desc = stringResource(R.string.audio_balance_desc),
                         checked = state.audioBalanceEnabled,
                         onCheckedChange = { viewModel.toggleAudioBalance() },
                         isArabic = isArabic
@@ -196,8 +197,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Merge,
-                        title = Loc.get("always_bind_global", isArabic),
-                        desc = Loc.get("always_bind_global_desc", isArabic),
+                        title = stringResource(R.string.always_bind_global),
+                        desc = stringResource(R.string.always_bind_global_desc),
                         checked = state.globalMixAlwaysBound,
                         onCheckedChange = { viewModel.toggleGlobalMixAlwaysBound() },
                         isArabic = isArabic
@@ -207,8 +208,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.MusicNote,
-                        title = Loc.get("connect_music_only", isArabic),
-                        desc = Loc.get("connect_music_only_desc", isArabic),
+                        title = stringResource(R.string.connect_music_only),
+                        desc = stringResource(R.string.connect_music_only_desc),
                         checked = state.connectToMusicPlayersOnly,
                         onCheckedChange = { viewModel.toggleConnectToMusicPlayersOnly() },
                         isArabic = isArabic
@@ -218,7 +219,7 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsDropdownItem(
                         icon = Icons.Rounded.Timelapse,
-                        title = Loc.get("frame_duration", isArabic),
+                        title = stringResource(R.string.frame_duration),
                         desc = "Default: 10ms",
                         options = listOf("5ms", "10ms", "15ms", "20ms"),
                         selectedOption = state.frameDurationMs,
@@ -230,8 +231,8 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Hearing,
-                        title = Loc.get("reverb", isArabic),
-                        desc = Loc.get("reverb_desc", isArabic),
+                        title = stringResource(R.string.reverb),
+                        desc = stringResource(R.string.reverb_desc),
                         checked = state.reverbEnabled,
                         onCheckedChange = { viewModel.toggleReverb() },
                         isArabic = isArabic
@@ -240,20 +241,9 @@ fun EqualizerSettingsScreen(
 
                 item {
                     SettingsToggleItem(
-                        icon = Icons.Rounded.LinearScale,
-                        title = Loc.get("volume_bar", isArabic),
-                        desc = Loc.get("volume_bar_desc", isArabic),
-                        checked = state.showVolumeSlider,
-                        onCheckedChange = { viewModel.toggleVolumeSlider() },
-                        isArabic = isArabic
-                    )
-                }
-
-                item {
-                    SettingsToggleItem(
                         icon = Icons.Rounded.GridOn,
-                        title = Loc.get("use_10_bands", isArabic),
-                        desc = Loc.get("use_10_bands_desc", isArabic),
+                        title = stringResource(R.string.use_10_bands),
+                        desc = stringResource(R.string.use_10_bands_desc),
                         checked = state.use10Bands,
                         onCheckedChange = { viewModel.toggle10Bands() },
                         isArabic = isArabic
@@ -263,19 +253,24 @@ fun EqualizerSettingsScreen(
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.ReportProblem,
-                        title = Loc.get("use_legacy", isArabic),
-                        desc = Loc.get("use_legacy_desc", isArabic),
+                        title = stringResource(R.string.use_legacy),
+                        desc = stringResource(R.string.use_legacy_desc),
                         checked = state.useLegacyEffects,
                         onCheckedChange = { viewModel.toggleLegacyEffects() },
                         isArabic = isArabic
                     )
                 }
 
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Notifications ──
+                item { SectionLabel(stringResource(R.string.settings_group_notifications)) }
+
                 item {
                     SettingsToggleItem(
                         icon = Icons.Rounded.Notifications,
-                        title = Loc.get("notifications", isArabic),
-                        desc = Loc.get("notifications_desc", isArabic),
+                        title = stringResource(R.string.notifications),
+                        desc = stringResource(R.string.notifications_desc),
                         checked = state.showNotification,
                         onCheckedChange = { viewModel.toggleShowNotification() },
                         isArabic = isArabic
@@ -283,17 +278,43 @@ fun EqualizerSettingsScreen(
                 }
 
                 item {
+                    SettingsToggleItem(
+                        icon = Icons.Rounded.LinearScale,
+                        title = stringResource(R.string.volume_bar),
+                        desc = stringResource(R.string.volume_bar_desc),
+                        checked = state.showVolumeSlider,
+                        onCheckedChange = { viewModel.toggleVolumeSlider() },
+                        isArabic = isArabic
+                    )
+                }
+
+                item { Spacer(modifier = Modifier.height(OmniSpacing.md)) }
+
+                // ── Advanced ──
+                item { SectionLabel(stringResource(R.string.settings_group_advanced)) }
+
+                item {
                     SettingsClickableItem(
-                        icon = Icons.Rounded.Bluetooth,
-                        title = Loc.get("saved_bt", isArabic),
-                        desc = Loc.get("saved_bt_desc", isArabic),
+                        icon = Icons.Rounded.Backup,
+                        title = stringResource(R.string.backup),
+                        desc = stringResource(R.string.backup_desc),
                         onClick = {},
                         isArabic = isArabic
                     )
                 }
 
                 item {
-                    Spacer(modifier = Modifier.height(32.dp))
+                    SettingsClickableItem(
+                        icon = Icons.Rounded.Bluetooth,
+                        title = stringResource(R.string.saved_bt),
+                        desc = stringResource(R.string.saved_bt_desc),
+                        onClick = {},
+                        isArabic = isArabic
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(OmniSpacing.xxl))
                 }
             }
         }
@@ -314,17 +335,17 @@ fun SettingsDropdownItem(
     var expanded by remember { mutableStateOf(false) }
 
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { expanded = !expanded }
-                .padding(16.dp),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -332,13 +353,13 @@ fun SettingsDropdownItem(
                 Icon(
                     imageVector = Icons.Rounded.ArrowDropDown,
                     contentDescription = "Dropdown",
-                    tint = Color(0xFF00D9A6)
+                    tint = OmniAccentTeal
                 )
 
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color(0xFF1A1B2E))
+                    modifier = Modifier.background(OmniCardBg)
                 ) {
                     options.forEach { opt ->
                         DropdownMenuItem(
@@ -363,17 +384,17 @@ fun SettingsDropdownItem(
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }
@@ -391,24 +412,24 @@ fun SettingsClickableItem(
     isArabic: Boolean
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onClick() }
-                .padding(16.dp),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = if (isArabic) Icons.AutoMirrored.Filled.KeyboardArrowLeft else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Navigate",
-                tint = Color(0xFF00D9A6)
+                tint = OmniAccentTeal
             )
 
             Row(
@@ -422,17 +443,17 @@ fun SettingsClickableItem(
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }
@@ -451,16 +472,16 @@ fun SettingsToggleItem(
     isArabic: Boolean
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1B2E)),
+        shape = RoundedCornerShape(OmniRadius.medium),
+        colors = CardDefaults.cardColors(containerColor = OmniCardBg),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF2E2F45), RoundedCornerShape(16.dp))
+            .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.medium))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(OmniSpacing.xl),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -469,8 +490,8 @@ fun SettingsToggleItem(
                 onCheckedChange = onCheckedChange,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = Color(0xFF00D9A6),
-                    uncheckedThumbColor = Color(0xFF94A3B8),
+                    checkedTrackColor = OmniAccentTeal,
+                    uncheckedThumbColor = OmniMutedText,
                     uncheckedTrackColor = Color(0xFF2E2F45)
                 )
             )
@@ -486,17 +507,17 @@ fun SettingsToggleItem(
                         modifier = Modifier.padding(end = 12.dp, start = 8.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.End)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.End)
                     }
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                 } else {
-                    Icon(imageVector = icon, contentDescription = title, tint = Color(0xFF6C63FF))
+                    Icon(imageVector = icon, contentDescription = title, tint = OmniAccentIndigo)
                     Column(
                         horizontalAlignment = Alignment.Start,
                         modifier = Modifier.padding(start = 12.dp, end = 8.dp)
                     ) {
                         Text(title, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Start)
-                        Text(desc, color = Color(0xFF94A3B8), fontSize = 11.sp, textAlign = TextAlign.Start)
+                        Text(desc, color = OmniMutedText, fontSize = 11.sp, textAlign = TextAlign.Start)
                     }
                 }
             }

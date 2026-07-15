@@ -1,9 +1,13 @@
+@file:Suppress("DEPRECATION")
 package com.omni.equalizer.audio
 
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+
 import android.media.audiofx.Virtualizer
+
+
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Rather than silently doing nothing while claiming to work, this engine exposes
  * [status] so the UI can tell the user the truth.
  */
+
 object OmniAudioEngine {
 
     private const val TAG = "OmniAudioEngine"
@@ -55,6 +60,22 @@ object OmniAudioEngine {
 
     private var bassBoostStrengthSupported = false
     private var virtualizerStrengthSupported = false
+
+    // What the UI last asked for, independent of bypass — so un-bypassing restores exactly
+    // what the user had configured instead of guessing.
+    private var requestedEqEnabled = true
+    private var requestedBassEnabled = false
+    private var requestedVirtualizerEnabled = false
+    private var requestedLoudnessEnabled = false
+
+    private val _isBypassed = MutableStateFlow(false)
+    /** True when the user hit "Bypass" from the notification for a quick A/B listen. */
+    val isBypassed: StateFlow<Boolean> = _isBypassed
+
+    /** Effects that are ACTUALLY audible right now (requested AND not bypassed) — the honest
+     *  truth surfaced to the notification, not just what the UI thinks it asked for. */
+    private val _activeEffects = MutableStateFlow<Set<String>>(emptySet())
+    val activeEffects: StateFlow<Set<String>> = _activeEffects
 
     @Synchronized
     fun attach() {
@@ -129,11 +150,17 @@ object OmniAudioEngine {
     }
 
     fun setEqualizerEnabled(enabled: Boolean) {
+        requestedEqEnabled = enabled
+        applyEqEnabled()
+    }
+
+    private fun applyEqEnabled() {
         try {
-            equalizer?.enabled = enabled
+            equalizer?.enabled = requestedEqEnabled && !_isBypassed.value
         } catch (t: Throwable) {
             Log.w(TAG, "setEqualizerEnabled failed: ${t.message}")
         }
+        refreshActiveEffects()
     }
 
     /** gainDb expected in the UI's fixed -15..+15 range. */
@@ -156,11 +183,17 @@ object OmniAudioEngine {
     }
 
     fun setBassBoostEnabled(enabled: Boolean) {
+        requestedBassEnabled = enabled
+        applyBassEnabled()
+    }
+
+    private fun applyBassEnabled() {
         try {
-            bassBoost?.enabled = enabled
+            bassBoost?.enabled = requestedBassEnabled && !_isBypassed.value
         } catch (t: Throwable) {
             Log.w(TAG, "setBassBoostEnabled failed: ${t.message}")
         }
+        refreshActiveEffects()
     }
 
     /** percent expected in 0..100 (matches the UI slider). */
@@ -176,11 +209,17 @@ object OmniAudioEngine {
     }
 
     fun setVirtualizerEnabled(enabled: Boolean) {
+        requestedVirtualizerEnabled = enabled
+        applyVirtualizerEnabled()
+    }
+
+    private fun applyVirtualizerEnabled() {
         try {
-            virtualizer?.enabled = enabled
+            virtualizer?.enabled = requestedVirtualizerEnabled && !_isBypassed.value
         } catch (t: Throwable) {
             Log.w(TAG, "setVirtualizerEnabled failed: ${t.message}")
         }
+        refreshActiveEffects()
     }
 
     fun setVirtualizerStrength(percent: Float) {
@@ -195,11 +234,41 @@ object OmniAudioEngine {
     }
 
     fun setLoudnessEnabled(enabled: Boolean) {
+        requestedLoudnessEnabled = enabled
+        applyLoudnessEnabled()
+    }
+
+    private fun applyLoudnessEnabled() {
         try {
-            loudnessEnhancer?.enabled = enabled
+            loudnessEnhancer?.enabled = requestedLoudnessEnabled && !_isBypassed.value
         } catch (t: Throwable) {
             Log.w(TAG, "setLoudnessEnabled failed: ${t.message}")
         }
+        refreshActiveEffects()
+    }
+
+    /**
+     * Quick global A/B toggle: silences every effect without forgetting the user's
+     * individual settings, so flipping it back restores exactly what was configured before.
+     * Driven from the notification's "Bypass" action so the user can compare with/without
+     * the EQ without opening the app.
+     */
+    fun setGlobalBypass(bypassed: Boolean) {
+        if (bypassed == _isBypassed.value) return
+        _isBypassed.value = bypassed
+        applyEqEnabled()
+        applyBassEnabled()
+        applyVirtualizerEnabled()
+        applyLoudnessEnabled()
+    }
+
+    private fun refreshActiveEffects() {
+        val active = mutableSetOf<String>()
+        if (equalizer?.enabled == true) active += "Equalizer"
+        if (bassBoost?.enabled == true) active += "Bass Boost"
+        if (virtualizer?.enabled == true) active += "Virtualizer"
+        if (loudnessEnhancer?.enabled == true) active += "Loudness"
+        _activeEffects.value = active
     }
 
     /**
@@ -252,5 +321,7 @@ object OmniAudioEngine {
         loudnessEnhancer = null
         uiToDeviceBand = IntArray(uiBandCount) { -1 }
         _status.value = Status.NotAttached
+        _isBypassed.value = false
+        _activeEffects.value = emptySet()
     }
 }
