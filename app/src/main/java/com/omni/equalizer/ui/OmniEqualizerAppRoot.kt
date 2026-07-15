@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.CompareArrows
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -95,7 +97,7 @@ fun OmniEqualizerApp(viewModel: EqualizerViewModel) {
                     AnimatedContent(
                         targetState = activeScreen,
                         transitionSpec = {
-                            val spec = spring<IntOffset>(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
+                            val spec = spring<androidx.compose.ui.unit.IntOffset>(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
                             val fadeSpec = tween<Float>(220)
                             if (targetState == "settings") {
                                 slideInHorizontally(animationSpec = spec) { width -> if (isArabic) -width else width } + fadeIn(fadeSpec) togetherWith

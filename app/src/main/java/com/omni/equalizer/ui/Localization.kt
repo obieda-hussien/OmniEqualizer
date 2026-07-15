@@ -66,12 +66,12 @@ object Loc {
     fun get(key: String, isArabic: Boolean = false): String {
         val context = LocalContext.current
         val resources = if (isArabic) {
-            val locale = java.util.Locale("ar")
+            val locale = java.util.Locale.forLanguageTag("ar")
             val config = android.content.res.Configuration(context.resources.configuration)
             config.setLocale(locale)
             context.createConfigurationContext(config).resources
         } else {
-            val locale = java.util.Locale("en")
+            val locale = java.util.Locale.forLanguageTag("en")
             val config = android.content.res.Configuration(context.resources.configuration)
             config.setLocale(locale)
             context.createConfigurationContext(config).resources
