@@ -77,7 +77,7 @@ fun VerticalEqualizerBand(
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = String.format("%+.1f", dbValue),
+            text = String.format(java.util.Locale.ROOT, "%+.1f", dbValue),
             color = if (isEnabled) Color.White.copy(alpha = 0.9f) else Color(0xFF64748B),
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
