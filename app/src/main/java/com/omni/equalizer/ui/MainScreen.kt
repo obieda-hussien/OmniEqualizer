@@ -1,135 +1,76 @@
 package com.omni.equalizer.ui
-import androidx.compose.ui.res.stringResource
-import com.omni.equalizer.R
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.HelpOutline
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.rounded.*
 import androidx.compose.material.icons.automirrored.rounded.CompareArrows
+import androidx.compose.material.icons.automirrored.rounded.HelpOutline
 import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omni.equalizer.R
 import com.omni.equalizer.data.EqualizerPreset
-import com.omni.equalizer.ui.theme.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.atan2
-import kotlin.math.PI
+import com.omni.equalizer.ui.theme.OmniRadius
+import com.omni.equalizer.ui.theme.OmniSpacing
 
-// ── Shared visual constants for this screen's redesign (see also SharedComponents.kt) ──
-private val CardBg = Color(0xFF171826)
-private val CardBorder = Color(0xFFFFFFFF).copy(alpha = OmniElevation.strokeAlpha)
-private val MutedText = Color(0xFF8B8DA8)
-private val AccentIndigo = Color(0xFF8B7FF5)
-private val AccentTeal = Color(0xFF00D9A6)
-private val AccentPink = Color(0xFFFF6B9D)
+/**
+ * ── Redesigned home / equalizer screen ──
+ * Same three groups as before (bands / effects / volume) but rebuilt for clarity: one card
+ * style throughout ([OmniCard]), one accent used for the primary interactions, decorative
+ * motion removed from the background so the actual curve and levels are what draw the eye,
+ * and generous spacing so each group reads as its own thing instead of one dense scroll.
+ */
 
-@Composable
-private fun SectionCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(OmniRadius.large),
-        colors = CardDefaults.cardColors(containerColor = CardBg),
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, CardBorder, RoundedCornerShape(OmniRadius.large))
-    ) {
-        Column(modifier = Modifier.padding(OmniSpacing.lg), content = content)
-    }
-}
+private val frequencies = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
 
-@Composable
-private fun CompactToggleChip(
-    label: String,
-    icon: ImageVector,
-    isOn: Boolean,
-    isEnabled: Boolean,
-    activeColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(OmniRadius.small))
-            .background(if (isOn) activeColor.copy(alpha = 0.18f) else Color(0xFF20222E))
-            .border(
-                1.dp,
-                if (isOn) activeColor.copy(alpha = 0.45f) else CardBorder,
-                RoundedCornerShape(OmniRadius.small)
-            )
-            .clickable(enabled = isEnabled) { onClick() }
-            .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = if (isOn) activeColor else MutedText,
-            modifier = Modifier.size(15.dp)
-        )
-        Spacer(modifier = Modifier.width(OmniSpacing.xs))
-        Text(
-            text = label,
-            color = if (isOn) Color.White else MutedText,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-    }
-}
-
-// ── MAIN EQUALIZER SCREEN ──
 @Composable
 fun EqualizerMainScreen(
     state: EqualizerUiState,
@@ -142,91 +83,29 @@ fun EqualizerMainScreen(
     onShowSavePreset: () -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF121220)) // Deep premium dark background
-    ) {
+
+    Box(modifier = Modifier.fillMaxSize().background(OmniBackground)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .navigationBarsPadding()
                 .statusBarsPadding()
         ) {
-            // ── Toolbar ──
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = OmniSpacing.xxl, vertical = OmniSpacing.md),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.testTag("settings_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Settings,
-                            contentDescription = "Settings",
-                            tint = Color.White
-                        )
-                    }
-                    IconButton(onClick = onShowHelp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.HelpOutline,
-                            contentDescription = "Help",
-                            tint = Color.White
-                        )
-                    }
-                }
+            TopBar(
+                state = state,
+                onNavigateToSettings = onNavigateToSettings,
+                onShowHelp = onShowHelp
+            )
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = stringResource(R.string.title),
-                        color = Color.White,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        state.isBypassed -> Color(0xFFFFB020)
-                                        state.isEnabled && state.isEngineFullyReal -> AccentTeal
-                                        state.isEnabled -> Color(0xFFEF4444)
-                                        else -> MutedText
-                                    }
-                                )
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = when {
-                                state.isBypassed -> stringResource(R.string.bypassed_badge)
-                                state.isEnabled && state.isEngineFullyReal -> stringResource(R.string.engine_active_badge)
-                                state.isEnabled -> stringResource(R.string.engine_unavailable_badge)
-                                else -> stringResource(R.string.custom)
-                            },
-                            color = MutedText,
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-            }
-
-            // ── Scrollable content: three clearly separated sections ──
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = OmniSpacing.xxl)
+                    .padding(horizontal = OmniSpacing.xl)
             ) {
                 // ── SECTION 1: Equalizer Bands ──
                 SectionLabel(stringResource(R.string.section_eq_bands))
-                SectionCard {
+                OmniCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,9 +125,9 @@ fun EqualizerMainScreen(
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
-                                checkedTrackColor = AccentIndigo,
-                                uncheckedThumbColor = Color(0xFF94A3B8),
-                                uncheckedTrackColor = Color(0xFF2E2F45)
+                                checkedTrackColor = OmniAccentIndigo,
+                                uncheckedThumbColor = OmniMutedText,
+                                uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
                             ),
                             modifier = Modifier.testTag("eq_switch")
                         )
@@ -256,13 +135,7 @@ fun EqualizerMainScreen(
 
                     Spacer(modifier = Modifier.height(OmniSpacing.lg))
 
-                    val frequencies = listOf("31", "62", "125", "250", "500", "1k", "2k", "4k", "8k", "16k")
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                    ) {
+                    Box(modifier = Modifier.fillMaxWidth().height(220.dp)) {
                         AdvancedDspBackgroundVisualizer(
                             isActive = state.isEnabled,
                             modifier = Modifier.fillMaxSize()
@@ -272,23 +145,17 @@ fun EqualizerMainScreen(
                             isEnabled = state.isEnabled,
                             modifier = Modifier.fillMaxSize()
                         )
-
                         Row(
                             modifier = Modifier.fillMaxSize(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             frequencies.forEachIndexed { index, freq ->
-                                val dbValue = state.gains[index]
                                 VerticalEqualizerBand(
                                     freq = freq,
-                                    dbValue = dbValue,
+                                    dbValue = state.gains[index],
                                     isEnabled = state.isEnabled,
-                                    onValueChange = { newValue ->
-                                        viewModel.updateBand(index, newValue)
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight()
+                                    onValueChange = { newValue -> viewModel.updateBand(index, newValue) },
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
                                 )
                             }
                         }
@@ -301,81 +168,62 @@ fun EqualizerMainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(OmniRadius.small))
-                                .background(if (state.isSmartOptimized) AccentIndigo else Color(0xFF20222E))
-                                .clickable(enabled = state.isEnabled) { viewModel.toggleSmartOptimization() }
-                                .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.AutoAwesome,
-                                contentDescription = "Smart AI",
-                                tint = if (state.isSmartOptimized) Color.White else AccentTeal,
-                                modifier = Modifier.size(15.dp)
+                        EffectChip(
+                            label = stringResource(R.string.smart_btn),
+                            icon = Icons.Rounded.AutoAwesome,
+                            isOn = state.isSmartOptimized,
+                            isEnabled = state.isEnabled,
+                            activeColor = OmniAccentTeal,
+                            onClick = { viewModel.toggleSmartOptimization() }
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            PresetSelectorButton(
+                                label = if (state.isSmartOptimized) stringResource(R.string.smart_ai) else state.selectedPresetName,
+                                isEnabled = state.isEnabled,
+                                onClick = onShowPresets
                             )
                             Spacer(modifier = Modifier.width(OmniSpacing.xs))
-                            Text(
-                                text = stringResource(R.string.smart_btn),
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(OmniRadius.small))
-                                .border(1.dp, CardBorder, RoundedCornerShape(OmniRadius.small))
-                                .clickable(enabled = state.isEnabled) { onShowPresets() }
-                                .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = if (state.isSmartOptimized) stringResource(R.string.smart_ai) else state.selectedPresetName,
-                                color = AccentTeal,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 90.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Rounded.ArrowDropDown,
-                                contentDescription = "Presets",
-                                tint = MutedText,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            IconButton(
+                                onClick = onShowSavePreset,
+                                enabled = state.isEnabled,
+                                modifier = Modifier.size(38.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = stringResource(R.string.add_preset_btn),
+                                    tint = if (state.isEnabled) OmniMutedText else OmniFaintText,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(OmniSpacing.xl))
 
-                // ── SECTION 2: Sound Effects (quick toggles + the three FX dials) ──
+                // ── SECTION 2: Sound Effects ──
                 SectionLabel(stringResource(R.string.section_effects))
-                SectionCard {
+                OmniCard {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(OmniSpacing.sm)
                     ) {
-                        CompactToggleChip(
+                        EffectChip(
                             label = stringResource(R.string.bypass_label),
                             icon = Icons.AutoMirrored.Rounded.CompareArrows,
                             isOn = state.isBypassed,
                             isEnabled = state.isEnabled,
-                            activeColor = Color(0xFFFFB020),
+                            activeColor = OmniAccentAmber,
                             onClick = { viewModel.toggleBypass() },
                             modifier = Modifier.weight(1f)
                         )
-                        CompactToggleChip(
+                        EffectChip(
                             label = stringResource(R.string.auto_loudness_label),
                             icon = Icons.Rounded.GraphicEq,
                             isOn = state.autoLoudnessNormalization,
                             isEnabled = state.isEnabled,
-                            activeColor = AccentPink,
+                            activeColor = OmniAccentPink,
                             onClick = { viewModel.toggleAutoLoudnessNormalization() },
                             modifier = Modifier.weight(1f)
                         )
@@ -394,10 +242,9 @@ fun EqualizerMainScreen(
                             onValueChange = { viewModel.updateBassBoost(it) },
                             switchChecked = state.bassBoostEnabled,
                             onSwitchChange = { viewModel.toggleBassBoost() },
-                            color = AccentPink,
+                            color = OmniAccentPink,
                             modifier = Modifier.weight(1f)
                         )
-
                         CircularControlDial(
                             label = stringResource(R.string.loudness),
                             value = state.loudness,
@@ -405,10 +252,9 @@ fun EqualizerMainScreen(
                             onValueChange = { viewModel.updateLoudness(it) },
                             switchChecked = state.loudnessEnabled,
                             onSwitchChange = { viewModel.toggleLoudness() },
-                            color = AccentIndigo,
+                            color = OmniAccentIndigo,
                             modifier = Modifier.weight(1f)
                         )
-
                         CircularControlDial(
                             label = stringResource(R.string.virtualizer),
                             value = state.virtualizer,
@@ -416,7 +262,7 @@ fun EqualizerMainScreen(
                             onValueChange = { viewModel.updateVirtualizer(it) },
                             switchChecked = state.virtualizerEnabled,
                             onSwitchChange = { viewModel.toggleVirtualizer() },
-                            color = AccentTeal,
+                            color = OmniAccentTeal,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -427,7 +273,7 @@ fun EqualizerMainScreen(
                 // ── SECTION 3: System Volume ──
                 if (state.showVolumeSlider) {
                     SectionLabel(stringResource(R.string.section_volume))
-                    SectionCard {
+                    OmniCard {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -436,8 +282,8 @@ fun EqualizerMainScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
-                                    contentDescription = "Volume Icon",
-                                    tint = AccentIndigo,
+                                    contentDescription = null,
+                                    tint = OmniAccentIndigo,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(OmniSpacing.sm))
@@ -445,12 +291,12 @@ fun EqualizerMainScreen(
                                     text = stringResource(R.string.volume),
                                     color = Color.White,
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                             Text(
                                 text = "${state.volume.toInt()}%",
-                                color = MutedText,
+                                color = OmniMutedText,
                                 fontSize = 13.sp,
                                 fontFamily = FontFamily.Monospace
                             )
@@ -461,9 +307,9 @@ fun EqualizerMainScreen(
                             onValueChange = { viewModel.updateVolume(it) },
                             valueRange = 0f..100f,
                             colors = SliderDefaults.colors(
-                                thumbColor = AccentIndigo,
-                                activeTrackColor = AccentIndigo,
-                                inactiveTrackColor = Color(0xFF2E2F45)
+                                thumbColor = OmniAccentIndigo,
+                                activeTrackColor = OmniAccentIndigo,
+                                inactiveTrackColor = Color.White.copy(alpha = 0.1f)
                             ),
                             modifier = Modifier.testTag("volume_slider")
                         )
@@ -478,92 +324,205 @@ fun EqualizerMainScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = OmniSpacing.xxl, vertical = OmniSpacing.sm)
-                        .clip(RoundedCornerShape(OmniRadius.small))
-                        .background(Color(0xFFFFB020).copy(alpha = 0.14f))
-                        .border(1.dp, Color(0xFFFFB020).copy(alpha = 0.35f), RoundedCornerShape(OmniRadius.small))
+                        .padding(horizontal = OmniSpacing.xl, vertical = OmniSpacing.sm)
+                        .clip(RoundedCornerShape(OmniRadius.medium))
+                        .background(OmniAccentAmber.copy(alpha = 0.10f))
                         .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Info,
                         contentDescription = null,
-                        tint = Color(0xFFFFB020),
+                        tint = OmniAccentAmber,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(OmniSpacing.sm))
                     Text(
                         text = state.engineWarning.orEmpty(),
-                        color = Color(0xFFFFB020),
+                        color = OmniAccentAmber,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
 
-            // ── Bottom Status Bar: global-mix indicator + live spectrum ──
+            // ── Bottom status bar: live spectrum + a single quiet mode label ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF171826))
-                    .border(0.5.dp, CardBorder)
-                    .padding(OmniSpacing.md),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .background(OmniCardBg)
+                    .padding(horizontal = OmniSpacing.xl, vertical = OmniSpacing.md),
+                horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(OmniRadius.small))
-                        .background(Color(0xFF20222E))
-                        .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.MusicNote,
-                        contentDescription = "Music",
-                        tint = AccentIndigo,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.global_mix),
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Rounded.MusicNote,
+                    contentDescription = null,
+                    tint = OmniMutedText,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = stringResource(R.string.global_mix),
+                    color = OmniMutedText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium
+                )
 
                 LiveSpectrumVisualizer(
                     isActive = state.isEnabled,
                     levels = viewModel.spectrumLevels.collectAsState().value,
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(28.dp)
+                    modifier = Modifier.weight(1f).height(22.dp)
                 )
 
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(OmniRadius.small))
-                        .background(AccentTeal.copy(alpha = 0.15f))
-                        .border(1.dp, AccentTeal.copy(alpha = 0.3f), RoundedCornerShape(OmniRadius.small))
-                        .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Equalizer,
-                        contentDescription = "General",
-                        tint = AccentTeal,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.general_mode),
-                        color = AccentTeal,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.general_mode),
+                    color = if (state.isEnabled) OmniAccentTeal else OmniMutedText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun TopBar(
+    state: EqualizerUiState,
+    onNavigateToSettings: () -> Unit,
+    onShowHelp: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = OmniSpacing.lg, vertical = OmniSpacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(OmniSpacing.xs)) {
+            OmniCircularIconButton(
+                icon = Icons.Rounded.Settings,
+                contentDescription = "Settings",
+                onClick = onNavigateToSettings,
+                testTag = "settings_button"
+            )
+            OmniCircularIconButton(
+                icon = Icons.AutoMirrored.Rounded.HelpOutline,
+                contentDescription = "Help",
+                onClick = onShowHelp
+            )
+        }
+
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = stringResource(R.string.title),
+                color = Color.White,
+                fontSize = 19.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            StatusPill(state = state)
+        }
+    }
+}
+
+@Composable
+private fun StatusPill(state: EqualizerUiState) {
+    val (dotColor, label) = when {
+        state.isBypassed -> OmniAccentAmber to stringResource(R.string.bypassed_badge)
+        state.isEnabled && state.isEngineFullyReal -> OmniAccentTeal to stringResource(R.string.engine_active_badge)
+        state.isEnabled -> OmniAccentRed to stringResource(R.string.engine_unavailable_badge)
+        else -> OmniMutedText to stringResource(R.string.custom)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(OmniRadius.pill))
+            .background(Color.White.copy(alpha = 0.05f))
+            .padding(horizontal = OmniSpacing.sm, vertical = 3.dp)
+    ) {
+        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(dotColor))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = label, color = OmniMutedText, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+/** Pill-shaped quick toggle — used for Smart Auto, Bypass, and Auto Loudness. Flat fill when
+ *  off, soft tinted fill when on; no borders, so a row of these reads as one light group. */
+@Composable
+private fun EffectChip(
+    label: String,
+    icon: ImageVector,
+    isOn: Boolean,
+    isEnabled: Boolean,
+    activeColor: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(OmniRadius.pill))
+            .background(if (isOn) activeColor.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.05f))
+            .clickable(enabled = isEnabled, onClick = onClick)
+            .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = if (isOn) activeColor else OmniMutedText,
+            modifier = Modifier.size(15.dp)
+        )
+        Spacer(modifier = Modifier.width(OmniSpacing.xs))
+        Text(
+            text = label,
+            color = if (isOn) Color.White else OmniMutedText,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/** The active-preset control on the equalizer card — a single readable pill instead of a
+ *  cramped 90dp-wide truncated label. */
+@Composable
+private fun PresetSelectorButton(
+    label: String,
+    isEnabled: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(OmniRadius.pill))
+            .background(Color.White.copy(alpha = 0.05f))
+            .clickable(enabled = isEnabled, onClick = onClick)
+            .padding(horizontal = OmniSpacing.md, vertical = OmniSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.GraphicEq,
+            contentDescription = null,
+            tint = OmniAccentTeal,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            color = OmniAccentTeal,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 130.dp)
+        )
+        Spacer(modifier = Modifier.width(2.dp))
+        Icon(
+            imageVector = Icons.Rounded.ArrowDropDown,
+            contentDescription = stringResource(R.string.presets),
+            tint = OmniMutedText,
+            modifier = Modifier.size(16.dp)
+        )
     }
 }
