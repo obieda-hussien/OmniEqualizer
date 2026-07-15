@@ -1,9 +1,13 @@
+@file:Suppress("DEPRECATION")
 package com.omni.equalizer.audio
 
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+
 import android.media.audiofx.Virtualizer
+
+
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Rather than silently doing nothing while claiming to work, this engine exposes
  * [status] so the UI can tell the user the truth.
  */
+
 object OmniAudioEngine {
 
     private const val TAG = "OmniAudioEngine"

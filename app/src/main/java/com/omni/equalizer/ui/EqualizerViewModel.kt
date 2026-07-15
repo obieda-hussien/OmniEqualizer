@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -77,6 +78,7 @@ data class EqualizerUiState(
     val isBypassed: Boolean = false
 )
 
+@OptIn(FlowPreview::class)
 class EqualizerViewModel(application: Application) : AndroidViewModel(application) {
     private val database = PresetDatabase.getDatabase(application)
     private val repository = PresetRepository(database.presetDao())

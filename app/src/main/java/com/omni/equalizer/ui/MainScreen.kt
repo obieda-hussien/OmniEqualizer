@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.rounded.CompareArrows
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -359,7 +361,7 @@ fun EqualizerMainScreen(
                     ) {
                         CompactToggleChip(
                             label = Loc.get("bypass_label", isArabic),
-                            icon = Icons.Rounded.CompareArrows,
+                            icon = Icons.AutoMirrored.Rounded.CompareArrows,
                             isOn = state.isBypassed,
                             isEnabled = state.isEnabled,
                             activeColor = Color(0xFFFFB020),
@@ -431,7 +433,7 @@ fun EqualizerMainScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Rounded.VolumeUp,
+                                    imageVector = Icons.AutoMirrored.Rounded.VolumeUp,
                                     contentDescription = "Volume Icon",
                                     tint = AccentIndigo,
                                     modifier = Modifier.size(18.dp)

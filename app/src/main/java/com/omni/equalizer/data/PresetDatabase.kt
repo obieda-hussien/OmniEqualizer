@@ -68,7 +68,7 @@ abstract class PresetDatabase : RoomDatabase() {
                     PresetDatabase::class.java,
                     "preset_database"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance
