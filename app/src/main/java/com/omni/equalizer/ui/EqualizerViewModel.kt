@@ -1,6 +1,8 @@
 package com.omni.equalizer.ui
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.omni.equalizer.audio.OmniAudioEngine
@@ -139,6 +141,10 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
                     // isSmartOptimized deliberately NOT restored — always start with it off so a
                     // killed process doesn't silently resume background adaptive EQ.
                 )
+                // Make sure the actual app locale matches what was saved — otherwise the very
+                // first frame after a fresh process start would render in whatever language
+                // the device happens to default to, not the user's chosen one.
+                applyLocale(saved.currentLanguage)
                 pushStateToEngine()
             }
 
@@ -218,6 +224,10 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
         volume = volume
     )
 
+    /** Parses settings like "20dB" -> 20f, falling back to a sane default if malformed. */
+    private fun parseDb(value: String, fallback: Float = 15f): Float =
+        value.removeSuffix("dB").trim().toFloatOrNull() ?: fallback
+
     /** Applies the current UI state to the real audio engine. Idempotent, safe to call often. */
     private fun pushStateToEngine() {
         val s = _uiState.value
@@ -229,8 +239,10 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
             loudnessEnabled = s.loudnessEnabled,
             loudnessStrengthPercent = s.loudness,
             virtualizerEnabled = s.virtualizerEnabled,
-            virtualizerStrengthPercent = s.virtualizer
+            virtualizerStrengthPercent = s.virtualizer,
+            loudnessMaxGainDb = parseDb(s.loudnessMaxGain)
         )
+        OmniAudioEngine.setReverbEnabled(s.isEnabled && s.reverbEnabled)
     }
 
     private suspend fun seedDefaultPresets() {
@@ -333,7 +345,7 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     fun updateLoudness(value: Float) {
         if (!_uiState.value.isEnabled) return
         _uiState.value = _uiState.value.copy(loudness = value.coerceIn(0f, 100f))
-        OmniAudioEngine.setLoudnessTarget(_uiState.value.loudness)
+        OmniAudioEngine.setLoudnessTarget(_uiState.value.loudness, parseDb(_uiState.value.loudnessMaxGain))
     }
 
     fun toggleLoudness() {
@@ -429,7 +441,8 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
                         loudnessEnabled = _uiState.value.loudnessEnabled,
                         loudnessStrengthPercent = _uiState.value.loudness,
                         virtualizerEnabled = _uiState.value.virtualizerEnabled,
-                        virtualizerStrengthPercent = _uiState.value.virtualizer
+                        virtualizerStrengthPercent = _uiState.value.virtualizer,
+                        loudnessMaxGainDb = parseDb(_uiState.value.loudnessMaxGain)
                     )
                 }
                 return@launch
@@ -514,7 +527,7 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
 
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     _uiState.value = _uiState.value.copy(loudness = targetLoudnessPercent, loudnessEnabled = true)
-                    OmniAudioEngine.setLoudnessTarget(targetLoudnessPercent)
+                    OmniAudioEngine.setLoudnessTarget(targetLoudnessPercent, parseDb(_uiState.value.loudnessMaxGain))
                     OmniAudioEngine.setLoudnessEnabled(true)
                 }
             }
@@ -583,6 +596,18 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     // Change Settings values
     fun updateLanguage(lang: String) {
         _uiState.value = _uiState.value.copy(currentLanguage = lang)
+        // This is the part that actually makes strings.xml / stringResource() switch language
+        // and flips RTL for Arabic — just storing the flag in _uiState (as before) only
+        // affected our own manual RTL logic, never the real app locale, which is why the
+        // language toggle looked like it "did nothing".
+        applyLocale(lang)
+    }
+
+    private fun applyLocale(lang: String) {
+        val desired = LocaleListCompat.forLanguageTags(lang)
+        if (AppCompatDelegate.getApplicationLocales().toLanguageTags() != desired.toLanguageTags()) {
+            AppCompatDelegate.setApplicationLocales(desired)
+        }
     }
 
     fun updateTheme(theme: String) {
@@ -594,11 +619,20 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun updateBassMaxGain(gain: String) {
+        // Honest note: Android's BassBoost effect only exposes a 0-1000 "strength" intensity,
+        // not an actual decibel or frequency parameter — there's no real engine value this
+        // setting can drive. Kept as a stored preference so the UI doesn't silently drop it,
+        // but it doesn't yet change anything audible. Same applies to Bass Frequency below.
         _uiState.value = _uiState.value.copy(bassMaxGain = gain)
     }
 
     fun updateLoudnessMaxGain(gain: String) {
         _uiState.value = _uiState.value.copy(loudnessMaxGain = gain)
+        // Re-apply immediately so the new ceiling takes effect right away instead of only on
+        // the next unrelated loudness slider drag.
+        if (_uiState.value.isEnabled && _uiState.value.loudnessEnabled) {
+            OmniAudioEngine.setLoudnessTarget(_uiState.value.loudness, parseDb(gain))
+        }
     }
 
     fun toggleAudioBalance() {
@@ -618,7 +652,9 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun toggleReverb() {
-        _uiState.value = _uiState.value.copy(reverbEnabled = !_uiState.value.reverbEnabled)
+        val next = !_uiState.value.reverbEnabled
+        _uiState.value = _uiState.value.copy(reverbEnabled = next)
+        OmniAudioEngine.setReverbEnabled(_uiState.value.isEnabled && next)
     }
 
     fun toggleVolumeSlider() {
