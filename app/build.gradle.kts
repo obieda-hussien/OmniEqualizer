@@ -150,6 +150,9 @@ dependencies {
   // implementation(libs.accompanist.permissions)
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.fragment)
+  // Needed for AppCompatDelegate.setApplicationLocales() — the standard, reliable way to
+  // actually switch the app's language at runtime (see EqualizerViewModel.updateLanguage).
+  implementation(libs.androidx.appcompat)
   // implementation(libs.androidx.camera.camera2)
   // implementation(libs.androidx.camera.core)
   // implementation(libs.androidx.camera.lifecycle)
