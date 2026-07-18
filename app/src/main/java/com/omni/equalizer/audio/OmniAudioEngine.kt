@@ -4,6 +4,7 @@ package com.omni.equalizer.audio
 import android.media.audiofx.BassBoost
 import android.media.audiofx.Equalizer
 import android.media.audiofx.LoudnessEnhancer
+import android.media.audiofx.PresetReverb
 
 import android.media.audiofx.Virtualizer
 
@@ -51,6 +52,7 @@ object OmniAudioEngine {
     private var bassBoost: BassBoost? = null
     private var virtualizer: Virtualizer? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var presetReverb: PresetReverb? = null
 
     private var deviceBandCount: Short = 0
     private var deviceLevelRangeMb: ShortArray = shortArrayOf(-1500, 1500)
@@ -67,6 +69,7 @@ object OmniAudioEngine {
     private var requestedBassEnabled = false
     private var requestedVirtualizerEnabled = false
     private var requestedLoudnessEnabled = false
+    private var requestedReverbEnabled = false
 
     private val _isBypassed = MutableStateFlow(false)
     /** True when the user hit "Bypass" from the notification for a quick A/B listen. */
@@ -122,6 +125,16 @@ object OmniAudioEngine {
         } catch (t: Throwable) {
             Log.w(TAG, "LoudnessEnhancer unavailable: ${t.message}")
             missing += "Loudness"
+        }
+
+        try {
+            val pr = PresetReverb(PRIORITY, GLOBAL_MIX_SESSION)
+            pr.preset = PresetReverb.PRESET_SMALLROOM
+            pr.enabled = false
+            presetReverb = pr
+        } catch (t: Throwable) {
+            Log.w(TAG, "PresetReverb unavailable: ${t.message}")
+            missing += "Reverb"
         }
 
         _status.value = when {
@@ -247,6 +260,20 @@ object OmniAudioEngine {
         refreshActiveEffects()
     }
 
+    fun setReverbEnabled(enabled: Boolean) {
+        requestedReverbEnabled = enabled
+        applyReverbEnabled()
+    }
+
+    private fun applyReverbEnabled() {
+        try {
+            presetReverb?.enabled = requestedReverbEnabled && !_isBypassed.value
+        } catch (t: Throwable) {
+            Log.w(TAG, "setReverbEnabled failed: ${t.message}")
+        }
+        refreshActiveEffects()
+    }
+
     /**
      * Quick global A/B toggle: silences every effect without forgetting the user's
      * individual settings, so flipping it back restores exactly what was configured before.
@@ -260,6 +287,7 @@ object OmniAudioEngine {
         applyBassEnabled()
         applyVirtualizerEnabled()
         applyLoudnessEnabled()
+        applyReverbEnabled()
     }
 
     private fun refreshActiveEffects() {
@@ -268,17 +296,19 @@ object OmniAudioEngine {
         if (bassBoost?.enabled == true) active += "Bass Boost"
         if (virtualizer?.enabled == true) active += "Virtualizer"
         if (loudnessEnhancer?.enabled == true) active += "Loudness"
+        if (presetReverb?.enabled == true) active += "Reverb"
         _activeEffects.value = active
     }
 
     /**
-     * percent expected in 0..100. Mapped conservatively to 0..1500 millibels (0..15dB) target
-     * gain — high enough to be genuinely audible, capped well short of the values that start
-     * introducing clipping/distortion on typical device DACs.
+     * percent expected in 0..100. Mapped to 0..maxGainDb decibels of target gain — maxGainDb
+     * comes from the user's "Loudness Max Gain" setting (10/15/20/25dB) instead of a value
+     * silently hardcoded to always be 15dB regardless of what that setting said.
      */
-    fun setLoudnessTarget(percent: Float) {
+    fun setLoudnessTarget(percent: Float, maxGainDb: Float = 15f) {
         val le = loudnessEnhancer ?: return
-        val targetMb = (percent.coerceIn(0f, 100f) / 100f * 1500f).toInt()
+        val safeMaxDb = maxGainDb.coerceIn(1f, 30f) // sane guard rail either way
+        val targetMb = (percent.coerceIn(0f, 100f) / 100f * safeMaxDb * 100f).toInt()
         try {
             le.setTargetGain(targetMb)
         } catch (t: Throwable) {
@@ -295,7 +325,8 @@ object OmniAudioEngine {
         loudnessEnabled: Boolean,
         loudnessStrengthPercent: Float,
         virtualizerEnabled: Boolean,
-        virtualizerStrengthPercent: Float
+        virtualizerStrengthPercent: Float,
+        loudnessMaxGainDb: Float = 15f
     ) {
         setEqualizerEnabled(isEnabled)
         if (isEnabled) {
@@ -303,7 +334,7 @@ object OmniAudioEngine {
         }
         setBassBoostStrength(bassBoostStrengthPercent)
         setBassBoostEnabled(isEnabled && bassBoostEnabled)
-        setLoudnessTarget(loudnessStrengthPercent)
+        setLoudnessTarget(loudnessStrengthPercent, loudnessMaxGainDb)
         setLoudnessEnabled(isEnabled && loudnessEnabled)
         setVirtualizerStrength(virtualizerStrengthPercent)
         setVirtualizerEnabled(isEnabled && virtualizerEnabled)
@@ -315,10 +346,12 @@ object OmniAudioEngine {
         try { bassBoost?.release() } catch (_: Throwable) {}
         try { virtualizer?.release() } catch (_: Throwable) {}
         try { loudnessEnhancer?.release() } catch (_: Throwable) {}
+        try { presetReverb?.release() } catch (_: Throwable) {}
         equalizer = null
         bassBoost = null
         virtualizer = null
         loudnessEnhancer = null
+        presetReverb = null
         uiToDeviceBand = IntArray(uiBandCount) { -1 }
         _status.value = Status.NotAttached
         _isBypassed.value = false
