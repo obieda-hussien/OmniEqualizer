@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -95,7 +96,7 @@ fun OmniCard(
     modifier: Modifier = Modifier,
     elevated: Boolean = false,
     padding: PaddingValues = PaddingValues(OmniSpacing.lg),
-    content: @Composable () -> Unit
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(OmniRadius.xl),
@@ -104,7 +105,11 @@ fun OmniCard(
             .fillMaxWidth()
             .border(1.dp, OmniCardBorder, RoundedCornerShape(OmniRadius.xl))
     ) {
-        Box(modifier = Modifier.padding(padding)) { content() }
+        // NOTE: this MUST be a Column, not a Box. A Box stacks every direct child on top of
+        // each other at the same position instead of laying them out one after another —
+        // that was the cause of the equalizer graph, preset row, effect chips, and dials all
+        // overlapping each other on the main screen.
+        Column(modifier = Modifier.padding(padding), content = content)
     }
 }
 
@@ -158,6 +163,12 @@ fun OmniListRow(
     titleColor: Color = Color.White,
     trailing: @Composable RowScope.() -> Unit
 ) {
+    // isArabic is accepted for API consistency with the rest of the screen, but it is NOT
+    // used to manually reorder anything below: once the app locale is actually Arabic,
+    // Compose already mirrors Row/Column layout automatically (start<->end, left<->right).
+    // Manually flipping order here on top of that automatic mirroring is what caused icons
+    // to land in the wrong place — it mirrored twice. TextAlign.Start / Alignment.Start are
+    // themselves direction-aware, so leaving them as "Start" is correct in both languages.
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,32 +182,24 @@ fun OmniListRow(
             horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val textColumn = @Composable {
-                Column(horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start) {
+            OmniIconBadge(icon, iconTint)
+            Column(modifier = Modifier.weight(1f, fill = true), horizontalAlignment = Alignment.Start) {
+                Text(
+                    title,
+                    color = titleColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Start
+                )
+                if (desc.isNotBlank()) {
                     Text(
-                        title,
-                        color = titleColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start
+                        desc,
+                        color = OmniMutedText,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        textAlign = TextAlign.Start
                     )
-                    if (desc.isNotBlank()) {
-                        Text(
-                            desc,
-                            color = OmniMutedText,
-                            fontSize = 12.sp,
-                            lineHeight = 16.sp,
-                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start
-                        )
-                    }
                 }
-            }
-            if (isArabic) {
-                Box(modifier = Modifier.weight(1f, fill = true)) { textColumn() }
-                OmniIconBadge(icon, iconTint)
-            } else {
-                OmniIconBadge(icon, iconTint)
-                Box(modifier = Modifier.weight(1f, fill = true)) { textColumn() }
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, content = trailing)
