@@ -104,7 +104,7 @@ fun HelpSheetContent(
             color = OmniMutedText,
             fontSize = 14.sp,
             lineHeight = 22.sp,
-            textAlign = if (isArabic) TextAlign.End else TextAlign.Start,
+            textAlign = TextAlign.Start,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -222,13 +222,13 @@ private fun PresetRow(
             }
 
             val textColumn = @Composable {
-                Column(horizontalAlignment = if (isArabic) Alignment.End else Alignment.Start) {
+                Column(horizontalAlignment = Alignment.Start) {
                     Text(
                         text = preset.name,
                         color = Color.White,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        textAlign = if (isArabic) TextAlign.End else TextAlign.Start
+                        textAlign = TextAlign.Start
                     )
                     if (tagCaption.isNotBlank()) {
                         Text(
@@ -236,7 +236,7 @@ private fun PresetRow(
                             color = OmniAccentTeal,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
-                            textAlign = if (isArabic) TextAlign.End else TextAlign.Start
+                            textAlign = TextAlign.Start
                         )
                     }
                 }
@@ -275,7 +275,7 @@ fun PresetOptionsSheetContent(
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth(),
-            textAlign = if (isArabic) TextAlign.End else TextAlign.Start
+            textAlign = TextAlign.Start
         )
 
         Spacer(modifier = Modifier.height(OmniSpacing.md))
@@ -325,24 +325,19 @@ private fun OptionRow(
     isArabic: Boolean,
     onClick: () -> Unit
 ) {
+    // isArabic kept for signature consistency — Compose already mirrors this Row
+    // automatically once the app locale is really Arabic, so composing icon-then-label in a
+    // fixed order (rather than manually swapping) is what renders correctly in both languages.
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(OmniRadius.medium))
             .clickable(onClick = onClick)
             .padding(vertical = OmniSpacing.md, horizontal = OmniSpacing.xs),
-        horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md, if (isArabic) Alignment.End else Alignment.Start),
+        horizontalArrangement = Arrangement.spacedBy(OmniSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val iconEl = @Composable { OmniIconBadge(icon = icon, tint = tint) }
-        val labelEl = @Composable { Text(label, color = if (tint == OmniAccentRed) tint else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium) }
-
-        if (isArabic) {
-            labelEl()
-            iconEl()
-        } else {
-            iconEl()
-            labelEl()
-        }
+        OmniIconBadge(icon = icon, tint = tint)
+        Text(label, color = if (tint == OmniAccentRed) tint else Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
